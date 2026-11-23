@@ -2,7 +2,7 @@
 
 ## Problema que a prática resolve
 
-Um *branch*, ou ramo, é uma linha independente de desenvolvimento dentro do repositório. Quando cada pessoa decide sozinha como criar, integrar e apagar ramos, o ramo principal recebe alterações sem revisão. O histórico fica ilegível porque uma correção urgente disputa espaço com trabalho inacabado. A estratégia de ramificação é o conjunto de regras que define quais ramos existem, quanto tempo duram e como o trabalho chega ao ramo principal.
+Um *branch*, também chamado de ramo, é uma linha independente de desenvolvimento dentro do repositório. Quando cada pessoa decide sozinha como criar, integrar e apagar ramos, o ramo principal recebe alterações sem revisão. O histórico fica ilegível porque uma correção urgente disputa espaço com trabalho inacabado. A estratégia de ramificação é o conjunto de regras que define quais ramos existem, quanto tempo duram e como o trabalho chega ao ramo principal.
 
 A literatura descreve com frequência três estratégias. A primeira é o *trunk-based development*, abreviado como TBD, em que todo trabalho entra em um único ramo principal por alterações pequenas e frequentes. Os ramos auxiliares duram horas ou poucos dias, como mostra o diagrama a seguir, que resume o fluxo do TBD.
 
