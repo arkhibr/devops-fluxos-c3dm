@@ -1,0 +1,84 @@
+name: Biblioteca segurança estática
+
+# Workflow reutilizável: CodeQL em matriz de linguagens e varredura de segredos com o Gitleaks.
+# O chamador precisa conceder security-events: write ao job que chama esta biblioteca.
+# Chamada de outro repositório: uses: arkhibr/devops-fluxos-c3dm/.github/workflows/lib-seguranca.yml@v1
+on:
+  workflow_call:
+    inputs:
+      linguagens:
+        description: Lista JSON de linguagens do CodeQL, por exemplo '["csharp"]'.
+        type: string
+        required: true
+      config-gitleaks:
+        description: Caminho do arquivo de configuração do Gitleaks. Se o arquivo não existir, valem as regras padrão.
+        type: string
+        default: .gitleaks.toml
+      config-codeql:
+        description: Caminho do arquivo de configuração do CodeQL, por exemplo codeql-config.yml dentro da pasta de configuração. Vazio usa a configuração padrão.
+        type: string
+        default: ''
+
+permissions:
+  contents: read
+
+jobs:
+  codeql:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        language: ${{ fromJSON(inputs.linguagens) }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+      - uses: github/codeql-action/init@1bd86f2fdb4b86187fa4059f16f31a3202acc9ea  # v4.39.4
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: none
+          config-file: ${{ inputs.config-codeql }}
+      - uses: github/codeql-action/analyze@1bd86f2fdb4b86187fa4059f16f31a3202acc9ea  # v4.39.4
+        with:
+          category: /language:${{ matrix.language }}
+      - name: Resumir a falha
+        if: ${{ failure() }}
+        uses: arkhibr/devops-fluxos-c3dm/.github/actions/resumo-falha@v1
+        with:
+          etapa: CodeQL para ${{ matrix.language }}
+
+  segredos:
+    runs-on: ubuntu-latest
+    env:
+      GITLEAKS_VERSION: 8.30.1
+      GITLEAKS_SHA256: 551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+        with:
+          fetch-depth: 0
+      - name: Instalar o Gitleaks com verificação de checksum
+        run: |
+          curl -sSfL -o "$RUNNER_TEMP/gitleaks.tar.gz" \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          echo "${GITLEAKS_SHA256}  $RUNNER_TEMP/gitleaks.tar.gz" | sha256sum -c -
+          mkdir "$RUNNER_TEMP/gitleaks"
+          tar -xzf "$RUNNER_TEMP/gitleaks.tar.gz" -C "$RUNNER_TEMP/gitleaks" gitleaks
+          echo "$RUNNER_TEMP/gitleaks" >> "$GITHUB_PATH"
+      - name: Varrer o repositório e o histórico
+        env:
+          GITLEAKS_CONFIG: ${{ inputs.config-gitleaks }}
+        run: |
+          args=(detect --source . --redact --exit-code 1)
+          if [ -n "$GITLEAKS_CONFIG" ] && [ -f "$GITLEAKS_CONFIG" ]; then
+            args+=(--config "$GITLEAKS_CONFIG")
+          else
+            echo "Configuração '$GITLEAKS_CONFIG' ausente. Usando as regras padrão do Gitleaks."
+          fi
+          gitleaks "${args[@]}"
+      - name: Resumir a falha
+        if: ${{ failure() }}
+        uses: arkhibr/devops-fluxos-c3dm/.github/actions/resumo-falha@v1
+        with:
+          etapa: Varredura de segredos com o Gitleaks

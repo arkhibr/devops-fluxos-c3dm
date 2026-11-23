@@ -1,4 +1,5 @@
 """Testes do cenário 06: SAST, SCA e varredura de segredos."""
+import json
 import re
 import tomllib
 
@@ -7,6 +8,7 @@ import yaml
 from workflows import RAIZ, carregar_workflow, passos
 
 ARQUIVO = "06-seguranca.yml"
+LIB = "lib-seguranca.yml"
 FIXTURES = "cenarios/06-seguranca-estatica/fixtures"
 PADRAO_SHA256 = re.compile(r"^[0-9a-f]{64}$")
 
@@ -68,14 +70,20 @@ def test_fixtures_usam_as_ferramentas_esperadas():
 
 def test_codeql_matriz():
     wf = carregar_workflow(ARQUIVO)
-    job = wf["jobs"]["codeql"]
-    assert job["strategy"]["matrix"]["language"] == ["csharp", "javascript-typescript"]
+    chamada = wf["jobs"]["analise-estatica"]
+    assert chamada["uses"] == f"./.github/workflows/{LIB}"
+    assert json.loads(chamada["with"]["linguagens"]) == ["csharp", "javascript-typescript"]
+    assert chamada["with"]["config-codeql"] == "./.github/codeql/codeql-config.yml"
+    assert chamada["permissions"]["security-events"] == "write"
+    assert wf["permissions"] == {"contents": "read"}
+    lib = carregar_workflow(LIB)
+    job = lib["jobs"]["codeql"]
+    assert job["strategy"]["matrix"]["language"] == "${{ fromJSON(inputs.linguagens) }}"
     assert job["permissions"]["security-events"] == "write"
     assert "head.repo.full_name == github.repository" in job["if"]
-    assert wf["permissions"] == {"contents": "read"}
     init = [p for p in job["steps"] if p.get("uses", "").startswith("github/codeql-action/init@")][0]
     assert init["with"]["build-mode"] == "none"
-    assert init["with"]["config-file"] == "./.github/codeql/codeql-config.yml"
+    assert init["with"]["config-file"] == "${{ inputs.config-codeql }}"
 
 
 def test_codeql_ignora_fixtures():
@@ -92,12 +100,14 @@ def test_dependencias_somente_em_pull_request():
 
 
 def test_segredos_usa_cli_com_checksum():
-    wf = carregar_workflow(ARQUIVO)
-    job = wf["jobs"]["segredos"]
+    chamada = carregar_workflow(ARQUIVO)["jobs"]["analise-estatica"]["with"]
+    assert chamada["config-gitleaks"] == ".gitleaks.toml"
+    job = carregar_workflow(LIB)["jobs"]["segredos"]
     assert PADRAO_SHA256.match(job["env"]["GITLEAKS_SHA256"])
-    texto = yaml.safe_dump(job["steps"])
+    texto = "\n".join(p.get("run", "") for p in job["steps"])
     assert "sha256sum -c" in texto
-    assert "gitleaks detect --source . --config .gitleaks.toml --redact --exit-code 1" in texto
+    assert "detect --source . --redact --exit-code 1" in texto
+    assert '--config "$GITLEAKS_CONFIG"' in texto
     assert not any("gitleaks/gitleaks-action" in p.get("uses", "") for p in job["steps"])
     assert job["steps"][0]["with"]["fetch-depth"] == 0
 
@@ -111,7 +121,7 @@ def test_ferramentas_da_esteira_com_versao_e_checksum_fixados():
 
 def test_jobs_nao_colidem_com_verificacoes_obrigatorias():
     nomes = set(carregar_workflow(ARQUIVO)["jobs"])
-    assert nomes == {"codeql", "dependencias", "segredos", "fixtures-devem-reprovar"}
+    assert nomes == {"analise-estatica", "dependencias", "fixtures-devem-reprovar"}
     assert not {"build", "pytest", "actionlint", "titulo"} & nomes
 
 

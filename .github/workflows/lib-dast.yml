@@ -1,0 +1,72 @@
+name: Biblioteca segurança dinâmica
+
+# Workflow reutilizável: constrói a imagem, sobe o contêiner, espera o health e roda o ZAP baseline.
+# Chamada de outro repositório: uses: arkhibr/devops-fluxos-c3dm/.github/workflows/lib-dast.yml@v1
+on:
+  workflow_call:
+    inputs:
+      contexto-docker:
+        description: Pasta, a partir da raiz do repositório chamador, que contém o Dockerfile da aplicação.
+        type: string
+        required: true
+      porta:
+        description: Porta em que a aplicação escuta dentro do contêiner e em que é publicada no executor.
+        type: number
+        default: 8080
+      caminho-health:
+        description: Caminho HTTP que responde 2xx quando a aplicação está saudável.
+        type: string
+        default: /health
+      alvo:
+        description: URL completa que o ZAP varre, por exemplo http://localhost:8080/api/v1/versao.
+        type: string
+        required: true
+      regras-zap:
+        description: Caminho do arquivo de regras do ZAP no repositório chamador. Vazio roda sem arquivo de regras.
+        type: string
+        default: ''
+
+permissions:
+  contents: read
+
+jobs:
+  zap:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+      - name: Construir a imagem da aplicação
+        env:
+          CONTEXTO: ${{ inputs.contexto-docker }}
+        run: docker build -t app-dast "$CONTEXTO"
+      - name: Subir a aplicação no executor
+        env:
+          PORTA: ${{ inputs.porta }}
+        run: docker run -d --name app-dast -p "${PORTA}:${PORTA}" app-dast
+      - name: Esperar o health por até 60 segundos
+        env:
+          PORTA: ${{ inputs.porta }}
+          CAMINHO: ${{ inputs.caminho-health }}
+        run: |
+          for tentativa in $(seq 1 60); do
+            if curl -sf "http://localhost:${PORTA}${CAMINHO}" > /dev/null; then
+              echo "Aplicação saudável após ${tentativa} tentativa(s)."
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "::error::A aplicação não ficou saudável em 60 segundos. Logs do contêiner:"
+          docker logs app-dast
+          exit 1
+      - name: ZAP baseline contra a aplicação em execução
+        uses: zaproxy/action-baseline@de8ad967d3548d44ef623df22cf95c3b0baf8b25  # v0.15.0
+        with:
+          target: ${{ inputs.alvo }}
+          rules_file_name: ${{ inputs.regras-zap }}
+          fail_action: true
+          allow_issue_writing: false
+          artifact_name: zap-api
+      - name: Resumir a falha
+        if: ${{ failure() }}
+        uses: arkhibr/devops-fluxos-c3dm/.github/actions/resumo-falha@v1
+        with:
+          etapa: ZAP baseline contra ${{ inputs.alvo }}

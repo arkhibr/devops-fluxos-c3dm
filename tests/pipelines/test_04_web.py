@@ -2,7 +2,9 @@
 from workflows import carregar_workflow, passos
 
 ARQUIVO = "04-web.yml"
+LIB = "lib-web-ci.yml"
 JOB = "ci-web"
+JOB_LIB = "integracao"
 
 
 def _indice(comandos: list[str], fragmento: str) -> int:
@@ -12,8 +14,14 @@ def _indice(comandos: list[str], fragmento: str) -> int:
     raise AssertionError(f"nenhum passo contém {fragmento}")
 
 
+def test_04_chama_a_biblioteca():
+    chamada = carregar_workflow(ARQUIVO)["jobs"][JOB]
+    assert chamada["uses"] == f"./.github/workflows/{LIB}"
+    assert chamada["with"]["diretorio"] == "apps/web"
+
+
 def test_04_ordem_dos_passos():
-    lista = passos(carregar_workflow(ARQUIVO), JOB)
+    lista = passos(carregar_workflow(LIB), JOB_LIB)
     textos = [p.get("run", "") + " " + p.get("uses", "") for p in lista]
     ordem = [
         _indice(textos, "npm ci"),
@@ -28,18 +36,20 @@ def test_04_ordem_dos_passos():
 
 
 def test_04_usa_node_24_com_cache():
-    lista = passos(carregar_workflow(ARQUIVO), JOB)
-    node = [p for p in lista if "actions/setup-node" in p.get("uses", "")][0]["with"]
-    assert str(node["node-version"]) == "24"
+    wf = carregar_workflow(LIB)
+    node = [p for p in passos(wf, JOB_LIB) if "actions/setup-node" in p.get("uses", "")][0]["with"]
+    assert node["node-version"] == "${{ inputs.node-version }}"
+    assert str(wf["on"]["workflow_call"]["inputs"]["node-version"]["default"]) == "24"
     assert node["cache"] == "npm"
-    assert node["cache-dependency-path"] == "apps/web/package-lock.json"
+    assert node["cache-dependency-path"] == "${{ inputs.diretorio }}/package-lock.json"
+    assert wf["jobs"][JOB_LIB]["defaults"]["run"]["working-directory"] == "${{ inputs.diretorio }}"
 
 
 def test_04_publica_dist_como_artefato():
-    lista = passos(carregar_workflow(ARQUIVO), JOB)
+    lista = passos(carregar_workflow(LIB), JOB_LIB)
     envio = [p for p in lista if "actions/upload-artifact" in p.get("uses", "")][0]["with"]
     assert envio["name"] == "web-dist"
-    assert envio["path"] == "apps/web/dist"
+    assert envio["path"] == "${{ inputs.diretorio }}/dist"
 
 
 def test_04_paths():

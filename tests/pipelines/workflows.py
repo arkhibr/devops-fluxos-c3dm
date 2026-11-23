@@ -5,6 +5,7 @@ import yaml
 
 RAIZ = Path(__file__).resolve().parents[2]
 PASTA_WORKFLOWS = RAIZ / ".github" / "workflows"
+PASTA_ACOES = RAIZ / ".github" / "actions"
 
 
 def listar_workflows() -> list[Path]:
@@ -40,3 +41,19 @@ def usos(wf: dict) -> list[str]:
             if "uses" in passo:
                 encontrados.append(passo["uses"])
     return encontrados
+
+
+def listar_acoes() -> list[Path]:
+    """Lista os `action.yml` das composite actions em `.github/actions/<nome>/`."""
+    return sorted(PASTA_ACOES.glob("*/action.yml"))
+
+
+def carregar_acao(caminho: Path) -> dict:
+    with open(caminho, encoding="utf-8") as arquivo:
+        return yaml.safe_load(arquivo) or {}
+
+
+def usos_acao(acao: dict) -> list[str]:
+    """Todos os `uses:` dos passos de uma composite action."""
+    passos_acao = (acao.get("runs") or {}).get("steps") or []
+    return [passo["uses"] for passo in passos_acao if "uses" in passo]
