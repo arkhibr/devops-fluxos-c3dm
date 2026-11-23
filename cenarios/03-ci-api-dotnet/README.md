@@ -8,7 +8,7 @@ A cobertura de testes mede a proporção de linhas do código que os testes exec
 
 ## Workflow do cenário
 
-A API fica em `apps/api`, com a solução `Api.slnx` reunindo o projeto `Api` e o projeto de testes `Api.Tests`, escrito com xUnit. O *workflow* `03-api.yml` roda em *pull requests* e em *pushes* para o `main` que alterem `apps/api/**` ou o próprio arquivo do *workflow*. O filtro de caminhos inclui o próprio arquivo para que uma mudança apenas no YAML também seja verificada. O diagrama a seguir mostra a ordem dos passos executados pelo job de CI da API.
+A API fica em `apps/api`, com a solução `Api.slnx` reunindo o projeto `Api` e o projeto de testes `Api.Tests`, escrito com xUnit. O *workflow* `03-api.yml` roda em *pull requests* e em *pushes* para o `main` que alterem `apps/api/**` ou o próprio arquivo do *workflow*. O filtro de caminhos inclui o próprio arquivo para que uma mudança apenas no YAML também seja verificada. O job `ci-api` não contém passos próprios. Ele chama o *workflow* reutilizável `lib-dotnet-ci.yml`, apresentado no [cenário 12](../../docs/cenarios/12.md). A chamada informa a solução `apps/api/Api.slnx`, a pasta `apps/api`, a cobertura mínima de 80 e o filtro `[Api]*`. O diagrama a seguir mostra a ordem dos passos que a biblioteca executa em nome do job.
 
 ```mermaid
 flowchart TB
@@ -19,7 +19,7 @@ flowchart TB
     E --> F["Resumo publicado no job summary"]
 ```
 
-O job se chama `ci-api` porque o nome `build` já pertence à verificação obrigatória do portal. Dois jobs com o mesmo nome tornariam ambíguo o contexto exigido pelo *ruleset* do cenário 02.
+O job do chamador se chama `ci-api` porque o nome `build` já pertence à verificação obrigatória do portal. Dois jobs com o mesmo nome tornariam ambíguo o contexto exigido pelo *ruleset* do cenário 02.
 
 O passo de testes usa o coletor `XPlat Code Coverage`, fornecido pelo pacote `coverlet.collector`, que gera o arquivo `coverage.cobertura.xml` na pasta `TestResults` do projeto de testes em um formato XML aceito por muitas ferramentas de relatório. O parâmetro `Include="[Api]*"` restringe a medição ao assembly `Api`, de modo que o código dos testes fica fora do cálculo do percentual.
 

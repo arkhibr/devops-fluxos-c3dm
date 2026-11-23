@@ -44,6 +44,7 @@ nav:
       - 09 Ambientes: cenarios/09.md
       - 10 Blue-green: cenarios/10.md
       - 11 Canário: cenarios/11.md
+      - 12 Biblioteca reutilizável: cenarios/12.md
       - 13 Métricas DORA: cenarios/13.md
   - Referência:
       - Glossário: referencia/glossario.md

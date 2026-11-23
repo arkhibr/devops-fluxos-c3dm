@@ -1,0 +1,73 @@
+name: Biblioteca CI .NET
+
+# Workflow reutilizável: compila, testa com cobertura e reprova abaixo do mínimo.
+# Chamada de outro repositório: uses: arkhibr/devops-fluxos-c3dm/.github/workflows/lib-dotnet-ci.yml@v1
+on:
+  workflow_call:
+    inputs:
+      solucao:
+        description: Caminho do arquivo de solução (.sln ou .slnx) a partir da raiz do repositório chamador.
+        type: string
+        required: true
+      dotnet-version:
+        description: Versão do SDK do .NET instalada pelo setup-dotnet.
+        type: string
+        default: 10.0.x
+      cobertura-minima:
+        description: Percentual mínimo de cobertura de linhas. Abaixo dele o job falha.
+        type: number
+        default: 80
+      diretorio:
+        description: Pasta, a partir da raiz, em que os relatórios de cobertura são procurados.
+        type: string
+        default: .
+      incluir-cobertura:
+        description: Filtro de assemblies da cobertura, por exemplo [Api]*. Vazio mede todos os projetos.
+        type: string
+        default: ''
+
+permissions:
+  contents: read
+
+jobs:
+  integracao:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+      - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73  # v6.1.0
+        with:
+          dotnet-version: ${{ inputs.dotnet-version }}
+      - name: Compilar
+        env:
+          SOLUCAO: ${{ inputs.solucao }}
+        run: dotnet build "$SOLUCAO" --configuration Release
+      - name: Testar com cobertura
+        env:
+          SOLUCAO: ${{ inputs.solucao }}
+          INCLUIR: ${{ inputs.incluir-cobertura }}
+        run: |
+          args=(--configuration Release --no-build --collect:"XPlat Code Coverage")
+          if [ -n "$INCLUIR" ]; then
+            args+=(-- "DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Include=$INCLUIR")
+          fi
+          dotnet test "$SOLUCAO" "${args[@]}"
+      - name: Resumir cobertura e reprovar abaixo do mínimo
+        uses: irongut/CodeCoverageSummary@51cc3a756ddcd398d447c044c02cb6aa83fdae95  # v1.3.0
+        with:
+          filename: ${{ inputs.diretorio }}/**/TestResults/**/coverage.cobertura.xml
+          format: markdown
+          output: both
+          indicators: true
+          thresholds: ${{ inputs.cobertura-minima }} 90
+          fail_below_min: true
+      - name: Publicar resumo no job summary
+        if: ${{ !cancelled() }}
+        run: |
+          if [ -f code-coverage-results.md ]; then
+            cat code-coverage-results.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Resumir a falha
+        if: ${{ failure() }}
+        uses: arkhibr/devops-fluxos-c3dm/.github/actions/resumo-falha@v1
+        with:
+          etapa: CI da solução ${{ inputs.solucao }}

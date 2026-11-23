@@ -4,7 +4,7 @@ import re
 import pytest
 
 import workflows
-from workflows import carregar_workflow, jobs, listar_workflows, passos, usos
+from workflows import carregar_acao, carregar_workflow, jobs, listar_acoes, listar_workflows, passos, usos, usos_acao
 
 NOMES = [p.name for p in listar_workflows()]
 
@@ -18,9 +18,9 @@ GUARDAS = ("github.event_name != 'pull_request'", "github.ref == 'refs/heads/mai
 
 # Regras: cada função devolve a lista de violações de um workflow já carregado.
 
-def violacoes_sha(wf):
+def violacoes_sha(wf, lista_usos=None):
     saida = []
-    for uso in usos(wf):
+    for uso in usos(wf) if lista_usos is None else lista_usos:
         if uso.startswith("./") or EXCECAO_BIBLIOTECA.match(uso) or PADRAO_DOCKER.match(uso):
             continue
         if not PADRAO_SHA.match(uso):
@@ -139,6 +139,16 @@ def test_nomes_de_arquivo_seguem_o_padrao():
 @pytest.mark.parametrize("nome", NOMES)
 def test_usos_fixados_por_sha(nome):
     assert not violacoes_sha(carregar_workflow(nome))
+
+
+@pytest.mark.parametrize("caminho", listar_acoes(), ids=lambda c: c.parent.name)
+def test_usos_das_composite_actions_fixados_por_sha(caminho):
+    assert not violacoes_sha({}, usos_acao(carregar_acao(caminho)))
+
+
+def test_composite_action_sem_sha_e_reprovada():
+    acao = {"runs": {"using": "composite", "steps": [{"uses": "actions/checkout@v4"}, {"run": "echo"}]}}
+    assert violacoes_sha({}, usos_acao(acao)) == ["uses sem SHA de 40 caracteres: actions/checkout@v4"]
 
 
 @pytest.mark.parametrize("nome", NOMES)

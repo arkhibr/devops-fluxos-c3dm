@@ -8,7 +8,7 @@ O *lint* é a análise estática que aponta erros prováveis e desvios de estilo
 
 ## Workflow do cenário
 
-A aplicação fica em `apps/web` e usa React, Vite, Vitest e ESLint. O *workflow* `04-web.yml` roda em *pull requests* e em *pushes* para o `main` que alterem `apps/web/**` ou o próprio arquivo do *workflow*. O filtro de caminhos inclui o próprio arquivo para que uma mudança apenas no YAML também seja verificada. O diagrama a seguir mostra a ordem dos passos executados pelo job de CI da aplicação.
+A aplicação fica em `apps/web` e usa React, Vite, Vitest e ESLint. O *workflow* `04-web.yml` roda em *pull requests* e em *pushes* para o `main` que alterem `apps/web/**` ou o próprio arquivo do *workflow*. O filtro de caminhos inclui o próprio arquivo para que uma mudança apenas no YAML também seja verificada. O job `ci-web` não contém passos próprios. Ele chama o *workflow* reutilizável `lib-web-ci.yml`, apresentado no [cenário 12](../../docs/cenarios/12.md), com a pasta `apps/web` e o Node 24. O diagrama a seguir mostra a ordem dos passos que a biblioteca executa em nome do job.
 
 ```mermaid
 flowchart TB
@@ -21,9 +21,9 @@ flowchart TB
     G --> H["Upload de apps/web/dist como artefato web-dist"]
 ```
 
-O job se chama `ci-web` porque o nome `build` já pertence à verificação obrigatória do portal. Dois jobs com o mesmo nome tornariam ambíguo o contexto exigido pelo *ruleset* do cenário 02.
+O job do chamador se chama `ci-web` porque o nome `build` já pertence à verificação obrigatória do portal. Dois jobs com o mesmo nome tornariam ambíguo o contexto exigido pelo *ruleset* do cenário 02.
 
-O passo de instalação do Node usa a *action* `actions/setup-node` com `node-version: 24` e `cache: npm`. O parâmetro `cache-dependency-path` aponta para `apps/web/package-lock.json`, porque o arquivo de dependências não está na raiz do repositório e a *action* o procuraria ali. A chave do *cache* deriva do conteúdo desse arquivo, de modo que a pasta de pacotes baixados é reaproveitada enquanto as dependências não mudam.
+O passo de instalação do Node usa a *action* `actions/setup-node` com `node-version: 24` e `cache: npm`. O parâmetro `cache-dependency-path` aponta para o `package-lock.json` da pasta informada na entrada `diretorio`, no caso `apps/web/package-lock.json`, porque o arquivo de dependências não está na raiz do repositório e a *action* o procuraria ali. A chave do *cache* deriva do conteúdo desse arquivo, de modo que a pasta de pacotes baixados é reaproveitada enquanto as dependências não mudam.
 
 O comando `npm ci` instala exatamente as versões registradas no `package-lock.json` e falha se o arquivo divergir do `package.json`. O comando `npm install` pode atualizar o arquivo de travamento e produzir instalações diferentes entre execuções, o que contraria o objetivo de repetibilidade da esteira.
 

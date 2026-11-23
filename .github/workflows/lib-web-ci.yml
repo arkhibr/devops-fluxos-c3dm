@@ -1,0 +1,53 @@
+name: Biblioteca CI web
+
+# Workflow reutilizável: instala, analisa, testa e compila uma aplicação Node e publica o artefato web-dist.
+# Chamada de outro repositório: uses: arkhibr/devops-fluxos-c3dm/.github/workflows/lib-web-ci.yml@v1
+on:
+  workflow_call:
+    inputs:
+      diretorio:
+        description: Pasta da aplicação, a partir da raiz do repositório chamador, que contém o package.json.
+        type: string
+        required: true
+      node-version:
+        description: Versão do Node.js instalada pelo setup-node.
+        type: string
+        default: '24'
+
+permissions:
+  contents: read
+
+jobs:
+  integracao:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.diretorio }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1  # v7.1.0
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: npm
+          cache-dependency-path: ${{ inputs.diretorio }}/package-lock.json
+      - name: Instalar dependências a partir do lockfile
+        run: npm ci
+      - name: Analisar o código com ESLint
+        run: npm run lint
+      - name: Verificar tipos com o TypeScript
+        run: npm run typecheck
+      - name: Testar com cobertura mínima de 80%
+        run: npm test
+      - name: Compilar para produção
+        run: npm run build
+      - name: Publicar o resultado da compilação
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
+        with:
+          name: web-dist
+          path: ${{ inputs.diretorio }}/dist
+          if-no-files-found: error
+      - name: Resumir a falha
+        if: ${{ failure() }}
+        uses: arkhibr/devops-fluxos-c3dm/.github/actions/resumo-falha@v1
+        with:
+          etapa: CI da aplicação web em ${{ inputs.diretorio }}

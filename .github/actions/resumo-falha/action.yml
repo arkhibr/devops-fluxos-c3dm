@@ -1,0 +1,25 @@
+name: Resumo de falha
+description: Grava no resumo da execução a etapa que falhou, o job e o link da execução.
+
+inputs:
+  etapa:
+    description: Nome legível da etapa ou do conjunto de etapas que falhou.
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Gravar o resumo da falha
+      shell: bash
+      env:
+        ETAPA: ${{ inputs.etapa }}
+        JOB: ${{ github.job }}
+        LINK: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      run: |
+        {
+          echo "### Falha na esteira"
+          echo
+          echo "- Etapa: ${ETAPA}"
+          echo "- Job: ${JOB}"
+          echo "- Execução: ${LINK}"
+        } >> "$GITHUB_STEP_SUMMARY"
