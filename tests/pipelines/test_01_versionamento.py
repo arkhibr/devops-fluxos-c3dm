@@ -20,7 +20,7 @@ def test_release_please_pacote_unico():
     assert "release-as" not in config["packages"]["."]
     assert config["include-v-in-tag"] is True
     manifesto = json.loads((RAIZ / ".release-please-manifest.json").read_text(encoding="utf-8"))
-    assert manifesto == {".": "1.0.0"}
+    assert manifesto == {".": "1.0.1"}
 
 
 def test_release_roda_somente_em_push_na_main():

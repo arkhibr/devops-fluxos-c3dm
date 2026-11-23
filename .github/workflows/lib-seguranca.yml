@@ -76,7 +76,7 @@ jobs:
           if [ -n "$GITLEAKS_CONFIG" ] && [ -f "$GITLEAKS_CONFIG" ]; then
             args+=(--config "$GITLEAKS_CONFIG")
           else
-            echo "Configuração '$GITLEAKS_CONFIG' ausente. Usando as regras padrão do Gitleaks."
+            echo "::warning::Configuração '$GITLEAKS_CONFIG' ausente. Usando as regras padrão do Gitleaks."
           fi
           gitleaks "${args[@]}"
       - name: Resumir a falha

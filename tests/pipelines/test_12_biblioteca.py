@@ -144,3 +144,25 @@ def test_readme_mostra_chamador_externo():
     texto = (RAIZ / "cenarios" / "12-biblioteca-reutilizavel" / "README.md").read_text(encoding="utf-8")
     for lib in BIBLIOTECA:
         assert re.search(rf"arkhibr/devops-fluxos-c3dm/\.github/workflows/{lib}@v1", texto), lib
+
+
+def test_chamadores_de_lib_observam_a_lib_e_a_acao_nos_paths():
+    for caminho in listar_workflows():
+        if caminho.name.startswith("lib-"):
+            continue
+        wf = carregar_workflow(caminho.name)
+        for job in jobs(wf).values():
+            uso = job.get("uses", "")
+            if not uso.startswith("./.github/workflows/lib-"):
+                continue
+            lib = uso[2:]
+            for evento in ("pull_request", "push"):
+                filtro = (wf["on"].get(evento) or {}).get("paths")
+                if filtro is None:
+                    continue
+                assert lib in filtro, f"{caminho.name}: {evento} sem {lib}"
+                assert ".github/actions/resumo-falha/**" in filtro, f"{caminho.name}: {evento} sem a action"
+
+
+def test_dast_expoe_nome_do_artefato():
+    assert _entradas("lib-dast.yml")["nome-artefato"]["default"] == "zap-api"
