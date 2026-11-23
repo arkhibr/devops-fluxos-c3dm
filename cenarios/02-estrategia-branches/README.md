@@ -33,30 +33,21 @@ flowchart TB
 A segunda é o *Git Flow*, que mantém dois ramos permanentes, o `develop` para o desenvolvimento e o `main` para a produção. Ramos de funcionalidade, de *release* e de correção urgente partem desses dois. Cada ramo de *release* é estabilizado separadamente e depois integrado aos dois ramos permanentes.
 
 ```mermaid
-flowchart TB
-    subgraph perm["Ramos permanentes"]
-        D["develop"]:::etapa
-        M["main"]:::etapa
-    end
-    subgraph temp["Ramos temporários"]
-        F["Funcionalidade"]:::gatilho
-        R["Release"]:::gatilho
-        H["Correção urgente"]:::gatilho
-    end
-    F --> D
-    D --> R
-    R --> M
-    R --> D
-    M --> H
-    H --> M
-    H --> D
-
-    classDef gatilho fill:#E8F1FB,stroke:#1F5FA8,color:#0B2545
-    classDef etapa fill:#FFFFFF,stroke:#5B6B7F,color:#1B2733
-    classDef verificacao fill:#FFF6E0,stroke:#B7791F,color:#5A3A00
-    classDef sucesso fill:#E6F4EA,stroke:#2E7D32,color:#123B17
-    classDef falha fill:#FDECEA,stroke:#C62828,color:#5B1111
-    classDef artefato fill:#F3E8FD,stroke:#6A3FB5,color:#2D1457
+sequenceDiagram
+    autonumber
+    participant F as feature
+    participant D as develop
+    participant R as release
+    participant M as main
+    participant H as hotfix
+    F->>D: Funcionalidade integrada
+    D->>R: Corte da release
+    Note over R: Estabilização isolada
+    R->>M: Merge e tag da versão
+    R->>D: Merge de volta
+    M->>H: Correção urgente em produção
+    H->>M: Merge e nova tag
+    H->>D: Merge de volta
 ```
 
 A terceira é o *Release Flow*, praticado pela Microsoft, que combina o desenvolvimento no tronco com um ramo de *release* cortado a partir do `main` a cada versão publicada. Na Microsoft o corte ocorre a cada *sprint*. O ramo de *release* é mantido enquanto aquela versão estiver em produção. Toda correção é feita primeiro no `main` e levada ao ramo de *release* por uma operação chamada *cherry-pick*, que copia um *commit* de um ramo para outro.
