@@ -46,6 +46,7 @@ nav:
       - 11 Canário: cenarios/11.md
       - 12 Biblioteca reutilizável: cenarios/12.md
       - 13 Métricas DORA: cenarios/13.md
+      - 14 Sistema existente: cenarios/14.md
   - Referência:
       - Glossário: referencia/glossario.md
       - Métricas: referencia/metricas.md
