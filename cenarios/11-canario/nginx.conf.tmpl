@@ -1,0 +1,17 @@
+# Modelo da configuração do roteador. O script ajustar-pesos.sh substitui ESTAVEL e
+# CANARIO por `weight=N` ou apaga a linha do destino quando o valor é `fora`.
+# A diretiva max_fails=0 impede que o NGINX deixe de enviar requisições a um destino
+# que falhou, de modo que cada erro do canário aparece na amostra.
+upstream api {
+    server estavel:8080 ESTAVEL max_fails=0;
+    server canario:8080 CANARIO max_fails=0;
+}
+
+server {
+    listen 80;
+
+    location / {
+        proxy_pass http://api;
+        proxy_next_upstream off;
+    }
+}

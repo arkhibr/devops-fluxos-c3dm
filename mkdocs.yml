@@ -43,6 +43,7 @@ nav:
       - 08 Artefato único: cenarios/08.md
       - 09 Ambientes: cenarios/09.md
       - 10 Blue-green: cenarios/10.md
+      - 11 Canário: cenarios/11.md
   - Referência:
       - Glossário: referencia/glossario.md
       - Métricas: referencia/metricas.md
