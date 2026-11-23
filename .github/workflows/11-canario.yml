@@ -115,7 +115,20 @@ jobs:
           esperar 8091 estavel "$VERSAO_ESTAVEL"
           esperar 8092 canario "$VERSAO_CANARIO"
       - name: Enviar 10 por cento das requisições ao canário
-        run: cenarios/11-canario/ajustar-pesos.sh weight=9 weight=1
+        run: |
+          cenarios/11-canario/ajustar-pesos.sh weight=9 weight=1
+          # Os processos antigos do NGINX encerram aos poucos e respondem 404 por instantes.
+          # A amostragem só começa depois de dez respostas seguidas com sucesso.
+          for _ in $(seq 1 30); do
+            falhas=0
+            for _ in $(seq 1 10); do
+              curl -fsS --max-time 5 http://127.0.0.1:8081/api/v1/versao > /dev/null 2>&1 || falhas=$((falhas + 1))
+            done
+            [ "$falhas" -eq 0 ] && exit 0
+            sleep 1
+          done
+          echo "::error::O roteador não estabilizou depois do ajuste de pesos."
+          exit 1
       - name: Derrubar o canário para forçar erros
         if: ${{ inputs.forcar_erros }}
         run: |
