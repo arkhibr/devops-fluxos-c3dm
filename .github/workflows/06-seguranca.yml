@@ -41,6 +41,8 @@ jobs:
       - uses: actions/dependency-review-action@bbc44d14a204704ccc493733616cd1e93a0321ec  # v5.0.1
         with:
           fail-on-severity: high
+          # Avisos do lodash 4.17.15 dos fixtures do cenário, vulneráveis de propósito.
+          allow-ghsas: GHSA-35jh-r3h4-6jhm, GHSA-p6mc-m468-83gw, GHSA-r5fr-rjxr-66jc
 
   segredos:
     runs-on: ubuntu-latest

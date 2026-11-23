@@ -77,6 +77,8 @@ def test_dependencias_somente_em_pull_request():
     assert job["if"] == "github.event_name == 'pull_request'"
     revisao = [p for p in job["steps"] if "dependency-review-action" in p.get("uses", "")][0]
     assert revisao["with"]["fail-on-severity"] == "high"
+    permitidos = {g.strip() for g in revisao["with"]["allow-ghsas"].split(",")}
+    assert permitidos == {"GHSA-35jh-r3h4-6jhm", "GHSA-p6mc-m468-83gw", "GHSA-r5fr-rjxr-66jc"}
 
 
 def test_segredos_usa_cli_com_checksum():
