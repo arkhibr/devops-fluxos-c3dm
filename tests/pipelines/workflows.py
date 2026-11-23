@@ -9,13 +9,14 @@ PASTA_WORKFLOWS = RAIZ / ".github" / "workflows"
 
 def listar_workflows() -> list[Path]:
     """Lista os arquivos de workflow, sem subpastas, em ordem alfabética."""
-    return sorted(PASTA_WORKFLOWS.glob("*.yml"))
+    arquivos = [*PASTA_WORKFLOWS.glob("*.yml"), *PASTA_WORKFLOWS.glob("*.yaml")]
+    return sorted(a for a in arquivos if not a.name.startswith("._"))
 
 
 def carregar_workflow(nome: str) -> dict:
     """Lê o YAML e normaliza a chave `on`, que o PyYAML interpreta como True."""
     with open(PASTA_WORKFLOWS / nome, encoding="utf-8") as arquivo:
-        wf = yaml.safe_load(arquivo)
+        wf = yaml.safe_load(arquivo) or {}
     if True in wf:
         wf["on"] = wf.pop(True)
     return wf
