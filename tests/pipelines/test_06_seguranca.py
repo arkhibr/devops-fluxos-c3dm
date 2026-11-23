@@ -20,7 +20,7 @@ def test_gitleaks_ignora_somente_fixtures():
     assert config["extend"]["useDefault"] is True
     listas = config["allowlists"]
     assert len(listas) == 1
-    assert listas[0]["paths"] == [f"{FIXTURES}/"]
+    assert listas[0]["paths"] == [f"^{FIXTURES}/"]
     assert not {"regexes", "commits", "stopwords"} & set(listas[0])
 
 
@@ -51,8 +51,9 @@ def test_fixtures_usam_as_ferramentas_esperadas():
     osv = _passo("fixtures-devem-reprovar", "osv")["run"]
     assert "--config p/csharp" in semgrep and "--error" in semgrep
     assert "--no-git" in gitleaks and "--config" not in gitleaks
-    assert "package-lock.json" in osv
-    lock = (RAIZ / FIXTURES / "package-lock.json").read_text(encoding="utf-8")
+    assert "package-lock.json:$FIXTURES/lockfile-vulneravel.json" in osv
+    assert not (RAIZ / FIXTURES / "package-lock.json").exists()
+    lock = (RAIZ / FIXTURES / "lockfile-vulneravel.json").read_text(encoding="utf-8")
     assert '"version": "4.17.15"' in lock
 
 
@@ -61,6 +62,7 @@ def test_codeql_matriz():
     job = wf["jobs"]["codeql"]
     assert job["strategy"]["matrix"]["language"] == ["csharp", "javascript-typescript"]
     assert job["permissions"]["security-events"] == "write"
+    assert "head.repo.full_name == github.repository" in job["if"]
     assert wf["permissions"] == {"contents": "read"}
     init = [p for p in job["steps"] if p.get("uses", "").startswith("github/codeql-action/init@")][0]
     assert init["with"]["build-mode"] == "none"
@@ -69,7 +71,7 @@ def test_codeql_matriz():
 
 def test_codeql_ignora_fixtures():
     config = yaml.safe_load((RAIZ / ".github" / "codeql" / "codeql-config.yml").read_text(encoding="utf-8"))
-    assert config["paths-ignore"] == ["cenarios/**/fixtures/**"]
+    assert config["paths-ignore"] == ["cenarios/06-seguranca-estatica/fixtures/**"]
 
 
 def test_dependencias_somente_em_pull_request():
@@ -77,8 +79,7 @@ def test_dependencias_somente_em_pull_request():
     assert job["if"] == "github.event_name == 'pull_request'"
     revisao = [p for p in job["steps"] if "dependency-review-action" in p.get("uses", "")][0]
     assert revisao["with"]["fail-on-severity"] == "high"
-    permitidos = {g.strip() for g in revisao["with"]["allow-ghsas"].split(",")}
-    assert permitidos == {"GHSA-35jh-r3h4-6jhm", "GHSA-p6mc-m468-83gw", "GHSA-r5fr-rjxr-66jc"}
+    assert "allow-ghsas" not in revisao["with"]
 
 
 def test_segredos_usa_cli_com_checksum():
