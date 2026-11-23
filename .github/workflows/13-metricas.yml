@@ -1,0 +1,36 @@
+name: 13 Métricas
+
+on:
+  schedule:
+    - cron: "0 9 * * 1"
+  workflow_dispatch:
+    inputs:
+      dias:
+        description: Tamanho da janela de coleta, em dias
+        required: false
+        type: string
+        default: "30"
+
+permissions:
+  contents: read
+  deployments: read
+  issues: read
+  actions: read
+  pull-requests: read
+
+jobs:
+  metricas:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+      - name: Coletar dados pela API e calcular as métricas
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DIAS: ${{ inputs.dias || '30' }}
+        run: python3 cenarios/13-metricas-dora/coletar.py --dias "$DIAS" --saida metricas.md
+      - name: Publicar o relatório como artefato
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
+        with:
+          name: metricas
+          path: metricas.md
+          if-no-files-found: error

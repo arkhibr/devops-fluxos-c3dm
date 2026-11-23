@@ -28,7 +28,7 @@ A tabela relaciona cada ferramenta à sua função e ao cenário em que aparece.
 | Ambientes do GitHub | Agrupamento de variáveis, segredos e regras por etapa de implantação. | [09](../cenarios/09.md) |
 | Docker Compose e NGINX | Execução de duas versões da aplicação e roteamento do tráfego entre elas. | [10](../cenarios/10.md) e [11](../cenarios/11.md) |
 | *Composite actions* | Ações próprias que agrupam vários passos reutilizáveis. | 12 |
-| API REST do GitHub | Fonte de dados de implantações e de *issues* para o cálculo das métricas. | 13 |
+| API REST do GitHub | Fonte de dados de implantações e de *issues* para o cálculo das métricas. | [13](../cenarios/13.md) |
 | MkDocs com tema Material | Geração do portal de documentação. | Portal |
 
 ## Capacidades esperadas de uma plataforma
