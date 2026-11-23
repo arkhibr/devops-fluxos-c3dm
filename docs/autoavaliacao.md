@@ -56,9 +56,9 @@ A avaliação funciona melhor com duas ou três pessoas que conheçam o sistema,
 | Avançado | A implantação em produção ocorre sem indisponibilidade perceptível para os usuários. |
 | Especialista | A implantação ocorre em plataformas que ampliam a capacidade sob demanda, sem intervenção. |
 
-## Cenários recomendados para subir um nível
+## Cenários do repositório por nível e domínio
 
-O repositório atribui um único nível a cada cenário. Esse agrupamento é uma escolha do roteiro, explicada na página [Trilha de adoção](trilha.md). A tabela coloca cada cenário uma só vez, na coluna do nível do repositório e na linha do domínio que ele exercita. Onde a célula informa que não há cenário, o repositório não traz uma prática dedicada. Nesse caso a equipe deve recorrer às referências da página [Bibliografia](referencia/bibliografia.md).
+O repositório atribui um único nível a cada cenário. Esse agrupamento é uma escolha do roteiro, explicada na página [Trilha de adoção](trilha.md). A tabela coloca cada cenário uma só vez, na coluna do nível do repositório e na linha do domínio que ele exercita. Onde a célula informa que não há cenário, o repositório não traz uma prática dedicada. Nesse caso a equipe deve recorrer às referências da página [Bibliografia](referencia/bibliografia.md). A linha Transversal reúne os cenários que não exercitam um domínio específico do modelo, por tratarem do reaproveitamento da esteira, das métricas da esteira e da adoção em um sistema existente. Para subir um nível em um domínio, a equipe consulta a coluna do nível desejado e estuda os cenários indicados nessa linha e na linha Transversal.
 
 | Domínio | Fundacional | Novato | Intermediário | Avançado | Especialista |
 | --- | --- | --- | --- | --- | --- |

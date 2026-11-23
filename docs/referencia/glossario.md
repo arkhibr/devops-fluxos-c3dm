@@ -26,12 +26,12 @@ Este glossário define os termos usados nos cenários e nas demais páginas do p
 | Promover | Elevar um lançamento candidato à condição de lançamento, o que o habilita a ser implantado em produção. |
 | Publicar | Armazenar o artefato empacotado em um repositório de binários imutável, como o registro de contêineres, de modo que a versão seja rastreável. |
 | Ramo (*branch*) | Linha de desenvolvimento paralela no sistema de controle de versão. |
-| *Tag* | No Git, marca nomeada e fixa aplicada a um *commit* específico, usada com frequência para identificar um lançamento candidato com todo o código que o compõe. Não deve ser confundida com o rótulo, ou *label*, do GitHub, que é uma etiqueta de classificação de *issues* e de *pull requests*. |
+| Rótulo de versão (*tag*) | No Git, marca nomeada e fixa aplicada a um *commit* específico, usada com frequência para identificar um lançamento candidato com todo o código que o compõe. Não deve ser confundida com o *label* do GitHub, que é uma etiqueta de classificação de *issues* e de *pull requests*. |
 | *Runner* | Máquina, física ou virtual, que executa as tarefas de um *workflow*. |
 | SCM | Sigla de *Source Control Management*, o gerenciamento de controle de versão. O Git é o exemplo mais usado. |
 | SDLC | Sigla de *Software Development Life Cycle*, o ciclo de vida de desenvolvimento de software, que abrange desenvolvimento, compilação, teste e implantação. |
 | Tarefa (*job* ou *task*) | Atividade dentro de um estágio. Um estágio de testes pode conter uma tarefa de teste de regressão e outra de teste de pré-produção. |
 | Teste | Conjunto de atividades de garantia de qualidade que combina testes automatizados e manuais. |
 | Tronco (*trunk*) | Ramo principal do controle de versão, também chamado de linha principal. |
-| Versionamento | Atribuição de uma versão a uma instância específica do artefato. A versão identifica o artefato e o rótulo identifica um grupo ao qual ele pertence, de modo que os dois podem ter o mesmo valor sem que isso seja obrigatório. |
+| Versionamento | Atribuição de uma versão a uma instância específica do artefato. A versão identifica o artefato, enquanto a *tag* do Git marca o *commit* ao qual ele corresponde. Os dois podem ter o mesmo valor, mas isso não é obrigatório. |
 | *Workflow* | No GitHub Actions, arquivo YAML que descreve uma ou mais tarefas executadas em resposta a eventos do repositório. |
