@@ -5,4 +5,4 @@ useDefault = true
 
 [[allowlists]]
 description = "Fixtures do cenário 06, que devem ser reprovados pela varredura de segredos"
-paths = ['''cenarios/06-seguranca-estatica/fixtures/''']
+paths = ['''^cenarios/06-seguranca-estatica/fixtures/''']

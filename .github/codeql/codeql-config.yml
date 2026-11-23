@@ -2,4 +2,4 @@ name: Configuração do CodeQL do repositório
 # Os fixtures do cenário 06 contêm falhas de propósito e ficam fora da análise,
 # para que a lista de alertas do repositório reflita apenas o código real.
 paths-ignore:
-  - cenarios/**/fixtures/**
+  - cenarios/06-seguranca-estatica/fixtures/**
