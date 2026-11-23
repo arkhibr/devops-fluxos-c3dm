@@ -103,7 +103,9 @@ jobs:
       - name: OSV-Scanner sobre o lockfile com lodash vulnerável
         id: osv
         continue-on-error: true
-        run: osv-scanner scan source --lockfile "package-lock.json:$FIXTURES/lockfile-vulneravel.json" --format json > "$RUNNER_TEMP/osv.json"
+        run: >-
+          osv-scanner scan source --lockfile "package-lock.json:$FIXTURES/lockfile-vulneravel.json"
+          --format json > "$RUNNER_TEMP/osv.json"
       - name: Exigir que os três scanners tenham reprovado pelo motivo esperado
         env:
           SEMGREP_OUTCOME: ${{ steps.semgrep.outcome }}
