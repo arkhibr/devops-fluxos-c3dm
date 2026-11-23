@@ -11,7 +11,7 @@ Novato:
 
 - [03 Compilação e teste da API .NET com cobertura](03.md)
 - [04 Compilação e teste da aplicação React com *lint* e cobertura](04.md)
-- 05 Teste da própria esteira com `actionlint`, `yamllint` e `pytest`
+- [05 Teste da própria esteira com `actionlint`, `yamllint` e `pytest`](05.md)
 
 Intermediário:
 
