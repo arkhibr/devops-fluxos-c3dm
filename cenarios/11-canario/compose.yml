@@ -1,0 +1,25 @@
+# Versão estável, versão canário e um roteador NGINX na frente delas.
+# As variáveis sem valor padrão são obrigatórias: se alguma faltar, o Compose
+# interrompe com erro em vez de passar uma string vazia ao contêiner.
+# O roteador sobe com a configuração padrão do NGINX. O script ajustar-pesos.sh
+# grava nele o upstream ponderado e recarrega o processo.
+services:
+  estavel:
+    image: ghcr.io/arkhibr/devops-fluxos-c3dm-api:sha-${SHA7_ESTAVEL:?defina SHA7_ESTAVEL com o sha7 da versão estável}
+    environment:
+      APP_COLOR: estavel
+      APP_VERSION: ${VERSAO_ESTAVEL:?defina VERSAO_ESTAVEL com o sha da versão estável}
+    ports:
+      - "127.0.0.1:8091:8080"
+  canario:
+    image: ghcr.io/arkhibr/devops-fluxos-c3dm-api:sha-${SHA7_CANARIO:?defina SHA7_CANARIO com o sha7 da versão canário}
+    environment:
+      APP_COLOR: canario
+      APP_VERSION: ${VERSAO_CANARIO:?defina VERSAO_CANARIO com o sha da versão canário}
+    ports:
+      - "127.0.0.1:8092:8080"
+  roteador:
+    image: nginx:1.27-alpine
+    container_name: roteador
+    ports:
+      - "127.0.0.1:8081:80"

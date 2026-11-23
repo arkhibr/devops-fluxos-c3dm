@@ -77,3 +77,45 @@ def test_10_arquivos_de_apoio():
     assert "container_name: roteador" in compose
     assert ":?" in compose
     assert "COR_ATIVA" in (pasta / "nginx.conf.tmpl").read_text(encoding="utf-8")
+
+
+def test_11_chama_analisar():
+    lista = _passos_job(ARQ_11)
+    analise = next(p for p in lista if "analisar.py" in p.get("run", ""))
+    assert "--peso 0.10" in analise["run"] and "--tolerancia 0.06" in analise["run"]
+    assert "seq 1 200" in "\n".join(p.get("run", "") for p in lista)
+    posicao = lista.index(analise)
+    promocao = next(i for i, p in enumerate(lista) if "ajustar-pesos.sh fora weight=1" in p.get("run", ""))
+    remocao = next(i for i, p in enumerate(lista) if "ajustar-pesos.sh weight=1 fora" in p.get("run", ""))
+    assert promocao > posicao and "if" not in lista[promocao]
+    assert remocao > posicao and lista[remocao]["if"] == "failure()"
+    assert lista[-1]["if"] == "always()" and "down -v" in lista[-1]["run"]
+
+
+def test_11_inicia_com_pesos_9_para_1():
+    lista = _passos_job(ARQ_11)
+    assert any("ajustar-pesos.sh weight=9 weight=1" in p.get("run", "") for p in lista)
+
+
+def test_11_gatilho_permissoes_e_entradas():
+    wf = carregar_workflow(ARQ_11)
+    assert set(wf["on"]) == {"workflow_dispatch"}
+    entradas = wf["on"]["workflow_dispatch"]["inputs"]
+    assert entradas["sha"]["required"] is True
+    assert entradas["forcar_erros"]["type"] == "boolean"
+    assert wf["permissions"] == {"contents": "read", "packages": "read"}
+    implantar = wf["jobs"]["implantar"]
+    assert implantar["environment"] == "producao"
+    assert implantar["concurrency"] == {"group": "implantacao-producao", "cancel-in-progress": False}
+    _entradas_validadas(ARQ_11, "sha", "sha_anterior")
+    _sem_interpolacao_em_run(ARQ_11)
+
+
+def test_11_arquivos_de_apoio():
+    pasta = RAIZ / "cenarios" / "11-canario"
+    assert os.access(pasta / "ajustar-pesos.sh", os.X_OK)
+    modelo = (pasta / "nginx.conf.tmpl").read_text(encoding="utf-8")
+    assert "server estavel:8080 ESTAVEL max_fails=0;" in modelo and "server canario:8080 CANARIO max_fails=0;" in modelo
+    compose = (pasta / "compose.yml").read_text(encoding="utf-8")
+    assert "APP_COLOR: canario" in compose and "APP_COLOR: estavel" in compose
+    assert "container_name: roteador" in compose and ":?" in compose
