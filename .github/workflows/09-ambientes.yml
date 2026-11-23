@@ -1,0 +1,162 @@
+name: 09 Ambientes
+
+on:
+  workflow_run:
+    workflows: ["08 Artefato único"]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: Prefixo de 7 a 40 caracteres hexadecimais do commit cuja imagem será implantada
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  packages: read
+
+env:
+  REGISTRO: ghcr.io/arkhibr/devops-fluxos-c3dm
+
+jobs:
+  preparar:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push')
+    runs-on: ubuntu-latest
+    outputs:
+      sha: ${{ steps.resolver.outputs.sha }}
+      sha7: ${{ steps.resolver.outputs.sha7 }}
+    steps:
+      - name: Autenticar no GHCR com o GITHUB_TOKEN
+        uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550  # v4.8.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Validar a entrada e resolver o sha completo
+        id: resolver
+        env:
+          SHA_ENTRADA: ${{ inputs.sha || github.event.workflow_run.head_sha }}
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORIO: ${{ github.repository }}
+        run: |
+          if ! [[ "$SHA_ENTRADA" =~ ^[0-9a-f]{7,40}$ ]]; then
+            echo "::error::O sha deve ter de 7 a 40 caracteres hexadecimais em minúsculas."
+            exit 1
+          fi
+          sha=$(gh api "repos/${REPOSITORIO}/commits/${SHA_ENTRADA}" --jq .sha)
+          echo "sha=${sha}" >> "$GITHUB_OUTPUT"
+          echo "sha7=${sha:0:7}" >> "$GITHUB_OUTPUT"
+      - name: Conferir que a imagem existe no registro
+        env:
+          SHA7: ${{ steps.resolver.outputs.sha7 }}
+        run: |
+          imagem="${REGISTRO}-api:sha-${SHA7}"
+          if ! docker buildx imagetools inspect "$imagem" > /dev/null; then
+            echo "::error::A imagem ${imagem} não existe. Ela só é publicada quando o workflow 08 roda sobre o commit."
+            exit 1
+          fi
+
+  homologacao:
+    needs: preparar
+    runs-on: ubuntu-latest
+    environment: homologacao
+    concurrency:
+      group: implantacao-homologacao
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+      - name: Autenticar no GHCR com o GITHUB_TOKEN
+        uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550  # v4.8.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Subir a API com a configuração do ambiente
+        env:
+          SHA7: ${{ needs.preparar.outputs.sha7 }}
+          APP_ENV: ${{ vars.APP_ENV }}
+          APP_VERSION: ${{ needs.preparar.outputs.sha }}
+          TOKEN_DEMONSTRACAO: ${{ secrets.TOKEN_DEMONSTRACAO }}
+        run: docker compose -p c3dm-homologacao -f cenarios/09-ambientes/compose.yml up -d --wait --wait-timeout 60
+      - name: Conferir ambiente e versão pelo endpoint
+        env:
+          SHA7: ${{ needs.preparar.outputs.sha7 }}
+          APP_ENV: ${{ vars.APP_ENV }}
+          APP_VERSION: ${{ needs.preparar.outputs.sha }}
+          TOKEN_DEMONSTRACAO: ${{ secrets.TOKEN_DEMONSTRACAO }}
+        run: |
+          resposta=""
+          for _ in $(seq 1 30); do
+            resposta=$(curl -fsS http://127.0.0.1:8080/api/v1/versao) && break
+            sleep 2
+          done
+          echo "Resposta: ${resposta}"
+          ambiente=$(jq -r .ambiente <<< "$resposta")
+          versao=$(jq -r .versao <<< "$resposta")
+          if [ -z "$APP_ENV" ] || [ "$ambiente" != "$APP_ENV" ] || [ "$versao" != "$APP_VERSION" ]; then
+            echo "::error::Esperado ambiente=${APP_ENV} e versao=${APP_VERSION}, recebido ambiente=${ambiente} e versao=${versao}."
+            docker compose -p c3dm-homologacao -f cenarios/09-ambientes/compose.yml logs
+            exit 1
+          fi
+      - name: Remover os contêineres
+        if: always()
+        env:
+          SHA7: ${{ needs.preparar.outputs.sha7 }}
+          APP_ENV: ${{ vars.APP_ENV }}
+          APP_VERSION: ${{ needs.preparar.outputs.sha }}
+          TOKEN_DEMONSTRACAO: ${{ secrets.TOKEN_DEMONSTRACAO }}
+        run: docker compose -p c3dm-homologacao -f cenarios/09-ambientes/compose.yml down -v
+
+  producao:
+    needs: [preparar, homologacao]
+    runs-on: ubuntu-latest
+    environment: producao
+    concurrency:
+      group: implantacao-producao
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+      - name: Autenticar no GHCR com o GITHUB_TOKEN
+        uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550  # v4.8.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Subir a API com a configuração do ambiente
+        env:
+          SHA7: ${{ needs.preparar.outputs.sha7 }}
+          APP_ENV: ${{ vars.APP_ENV }}
+          APP_VERSION: ${{ needs.preparar.outputs.sha }}
+          TOKEN_DEMONSTRACAO: ${{ secrets.TOKEN_DEMONSTRACAO }}
+        run: docker compose -p c3dm-producao -f cenarios/09-ambientes/compose.yml up -d --wait --wait-timeout 60
+      - name: Conferir ambiente e versão pelo endpoint
+        env:
+          SHA7: ${{ needs.preparar.outputs.sha7 }}
+          APP_ENV: ${{ vars.APP_ENV }}
+          APP_VERSION: ${{ needs.preparar.outputs.sha }}
+          TOKEN_DEMONSTRACAO: ${{ secrets.TOKEN_DEMONSTRACAO }}
+        run: |
+          resposta=""
+          for _ in $(seq 1 30); do
+            resposta=$(curl -fsS http://127.0.0.1:8080/api/v1/versao) && break
+            sleep 2
+          done
+          echo "Resposta: ${resposta}"
+          ambiente=$(jq -r .ambiente <<< "$resposta")
+          versao=$(jq -r .versao <<< "$resposta")
+          if [ -z "$APP_ENV" ] || [ "$ambiente" != "$APP_ENV" ] || [ "$versao" != "$APP_VERSION" ]; then
+            echo "::error::Esperado ambiente=${APP_ENV} e versao=${APP_VERSION}, recebido ambiente=${ambiente} e versao=${versao}."
+            docker compose -p c3dm-producao -f cenarios/09-ambientes/compose.yml logs
+            exit 1
+          fi
+      - name: Remover os contêineres
+        if: always()
+        env:
+          SHA7: ${{ needs.preparar.outputs.sha7 }}
+          APP_ENV: ${{ vars.APP_ENV }}
+          APP_VERSION: ${{ needs.preparar.outputs.sha }}
+          TOKEN_DEMONSTRACAO: ${{ secrets.TOKEN_DEMONSTRACAO }}
+        run: docker compose -p c3dm-producao -f cenarios/09-ambientes/compose.yml down -v
