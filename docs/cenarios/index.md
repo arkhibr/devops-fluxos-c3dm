@@ -18,7 +18,7 @@ Intermediário:
 - [06 Análise estática, análise de dependências e varredura de segredos](06.md)
 - [07 Análise dinâmica de segurança com OWASP ZAP](07.md)
 - [08 Artefato único em imagem de contêiner promovida sem recompilação](08.md)
-- 09 Ambientes de homologação e produção
+- [09 Ambientes de homologação e produção com variáveis e segredos](09.md)
 
 Avançado:
 

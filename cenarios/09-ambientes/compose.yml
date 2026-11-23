@@ -1,0 +1,12 @@
+# Sobe a API a partir de uma imagem já publicada no GHCR.
+# As variáveis sem valor padrão são obrigatórias: se alguma faltar, o Compose
+# interrompe com erro em vez de passar uma string vazia ao contêiner.
+services:
+  api:
+    image: ghcr.io/arkhibr/devops-fluxos-c3dm-api:sha-${SHA7:?defina SHA7 com os sete primeiros caracteres do commit}
+    environment:
+      APP_ENV: ${APP_ENV:?defina APP_ENV com o nome do ambiente}
+      APP_VERSION: ${APP_VERSION:?defina APP_VERSION com o sha do commit}
+      APP_TOKEN_DEMONSTRACAO: ${TOKEN_DEMONSTRACAO:?defina TOKEN_DEMONSTRACAO}
+    ports:
+      - "127.0.0.1:8080:8080"
