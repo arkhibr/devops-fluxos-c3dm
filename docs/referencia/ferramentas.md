@@ -23,7 +23,7 @@ A tabela relaciona cada ferramenta à sua função e ao cenário em que aparece.
 | Gitleaks | Varredura de segredos, como senhas e chaves, em arquivos e no histórico do repositório. | [06](../cenarios/06.md) |
 | Semgrep | Análise estática por regras, usada para comprovar que o código com injeção de SQL é reprovado. | [06](../cenarios/06.md) |
 | OSV-Scanner | Consulta de dependências de um *lockfile* em bases públicas de vulnerabilidades. | [06](../cenarios/06.md) |
-| OWASP ZAP | Ferramenta de análise dinâmica de segurança que testa a aplicação em execução. | 07 |
+| OWASP ZAP | Ferramenta de análise dinâmica de segurança que testa a aplicação em execução. | [07](../cenarios/07.md) |
 | Docker e GHCR | Empacotamento em imagem de contêiner e registro de imagens do GitHub. | 08 |
 | Ambientes do GitHub | Agrupamento de variáveis, segredos e regras por etapa de implantação. | 09 |
 | Docker Compose e NGINX | Execução de duas versões da aplicação e roteamento do tráfego entre elas. | 10 e 11 |

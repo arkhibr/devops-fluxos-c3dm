@@ -1,0 +1,2 @@
+# Regras do ZAP baseline, uma por linha, separadas por tabulação: id, ação, justificativa.
+# Só se rebaixa uma regra com justificativa no terceiro campo da mesma linha.
