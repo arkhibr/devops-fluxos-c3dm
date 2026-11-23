@@ -35,6 +35,7 @@ nav:
       - cenarios/index.md
       - 01 Versionamento semântico: cenarios/01.md
       - 02 Estratégia de branches: cenarios/02.md
+      - 03 CI da API .NET: cenarios/03.md
   - Referência:
       - Glossário: referencia/glossario.md
       - Métricas: referencia/metricas.md
