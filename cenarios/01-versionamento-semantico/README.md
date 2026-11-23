@@ -19,27 +19,209 @@ O ponto de exclamação depois do tipo, ou um rodapé `BREAKING CHANGE:` no corp
 
 ## Workflow do cenário
 
-O cenário usa três *workflows*, que são arquivos YAML em `.github/workflows/` executados pelo GitHub Actions para reagir a eventos do repositório. O primeiro é o `01-titulo-pr.yml`, que valida o título de cada *pull request* com a ação `amannn/action-semantic-pull-request` e aceita sete tipos, listados na configuração do próprio arquivo. Um *pull request* é a proposta de integrar uma alteração ao ramo principal. A validação recai sobre o título porque a integração com a opção *squash* reúne todos os *commits* em um só. Isso vale somente quando o repositório está configurado para usar o título do *pull request* como mensagem desse *commit*, pré-requisito descrito na seção sobre execução.
-
-O segundo é o `01-release.yml`, que roda a cada *push* no ramo `main` e executa a ferramenta `release-please`, sendo *push* o envio de *commits* ao repositório remoto. A ferramenta lê as mensagens desde a última versão, calcula a próxima e mantém aberto um *pull request* de *release* que atualiza o arquivo `version.txt` e o `CHANGELOG.md`. Quando esse *pull request* é integrado, ela cria a *tag* `vX.Y.Z` e a *release* correspondente a partir da configuração de `release-please-config.json`, que declara um único pacote na raiz do repositório com ponto de partida `0.0.0` em `.release-please-manifest.json`.
-
-O terceiro é o `01-tag-principal.yml`, que mantém uma *tag* móvel com apenas o número maior da versão, como `v1`. O *workflow* extrai esse número do nome da *tag* publicada e move a *tag* móvel para o mesmo *commit*. Os cenários seguintes referenciam os *workflows* reutilizáveis deste repositório por `@v1`, de modo que os consumidores recebem as correções sem alterar a referência. Releases criadas com o `GITHUB_TOKEN` não disparam o evento `release` em outros *workflows*. Por isso o `01-release.yml` executa `gh workflow run 01-tag-principal.yml` logo depois de criar cada *release*, usando a *tag* recém-criada como referência da execução.
+O cenário usa três *workflows*, que são arquivos YAML em `.github/workflows/` executados pelo GitHub Actions para reagir a eventos do repositório. Um *pull request* é a proposta de integrar uma alteração ao ramo principal. O diagrama a seguir mostra a sequência entre a pessoa desenvolvedora, o *pull request* e cada um dos três *workflows*, desde a abertura do *pull request* até a movimentação da *tag* móvel.
 
 ```mermaid
 sequenceDiagram
-    participant D as Pessoa desenvolvedora
+    autonumber
+    actor D as Pessoa<br/>desenvolvedora
     participant PR as Pull request
+    participant T as 01-titulo-pr
     participant M as Ramo main
-    participant R as release-please
+    participant R as 01-release
+    participant G as 01-tag-principal
+    rect rgb(232, 241, 251)
+    Note over D,T: Fase pull request
     D->>PR: abre com título feat ou fix
-    PR->>PR: 01-titulo-pr valida o título
-    PR->>M: integração com squash
-    M->>R: 01-release calcula a versão
-    R->>PR: abre ou atualiza o pull request de release
-    D->>PR: integra o pull request de release
+    PR->>T: dispara a validação
+    T-->>PR: aprova o título
+    D->>M: integra com squash
+    end
+    rect rgb(255, 246, 224)
+    Note over M,R: Fase main
+    M->>R: push dispara o job
+    R->>PR: abre ou atualiza o PR de release
+    end
+    rect rgb(230, 244, 234)
+    Note over D,G: Fase release
+    D->>PR: integra o PR de release
     R->>M: cria a tag vX.Y.Z e a release
-    M->>M: 01-tag-principal move a tag vX
+    R->>G: gh workflow run
+    G->>M: move a tag vX
+    end
 ```
+
+### Validação do título do pull request
+
+O primeiro *workflow* é o `01-titulo-pr.yml`, que valida o título de cada *pull request* com a ação `amannn/action-semantic-pull-request`. A validação recai sobre o título porque a integração com a opção *squash* reúne todos os *commits* em um só. Isso vale somente quando o repositório está configurado para usar o título do *pull request* como mensagem desse *commit*, pré-requisito descrito na seção sobre execução. O trecho a seguir mostra o gatilho, a permissão mínima e a lista de tipos aceitos.
+
+Arquivo completo: [`.github/workflows/01-titulo-pr.yml`, linhas 4 a 28](https://github.com/arkhibr/devops-fluxos-c3dm/blob/main/.github/workflows/01-titulo-pr.yml#L4-L28).
+
+```yaml
+# Sem filtro de paths: o título vale para todo pull request.
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+permissions:
+  pull-requests: read
+
+jobs:
+  titulo:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validar o título pelo padrão Conventional Commits
+        uses: amannn/action-semantic-pull-request@c5e23b7e584519ee15caa684cf60d056aa9f035f  # v6.1.3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          types: |
+            feat
+            fix
+            docs
+            chore
+            ci
+            test
+            refactor
+```
+
+O gatilho `pull_request` com o tipo `edited` revalida o título sempre que ele é editado, o que permite corrigir uma reprovação sem enviar novo *commit*. A permissão `pull-requests: read` basta para a ação ler o título. A chave `types` é a lista fechada dos sete tipos aceitos, de modo que qualquer outro tipo reprova a verificação. O nome do job, `titulo`, é o contexto exigido pelo *ruleset* do cenário 02.
+
+### Cálculo da versão e release
+
+O segundo é o `01-release.yml`, que roda a cada *push* no ramo `main` e executa a ferramenta `release-please`. *Push* é o envio de *commits* ao repositório remoto. A ferramenta lê as mensagens desde a última versão, calcula a próxima e mantém aberto um *pull request* de *release* que atualiza o arquivo `version.txt` e o `CHANGELOG.md`. Quando esse *pull request* é integrado, ela cria a *tag* `vX.Y.Z` e a *release* correspondente. O trecho mostra o passo principal e o passo que aciona a *tag* móvel. O tratamento da falha, nas linhas 31 a 44, aparece no diagrama seguinte.
+
+Arquivo completo: [`.github/workflows/01-release.yml`, linhas 4 a 52](https://github.com/arkhibr/devops-fluxos-c3dm/blob/main/.github/workflows/01-release.yml#L4-L52).
+
+```yaml
+on:
+  push:
+    branches: [main]
+# ...
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Calcular a versão e manter o pull request de release
+        id: release
+        # A política da organização pode impedir o Actions de abrir pull requests.
+        # O passo seguinte decide se a falha é essa limitação conhecida ou um erro real.
+        continue-on-error: true
+        uses: googleapis/release-please-action@5c625bfb5d1ff62eadeeb3772007f7f66fdcf071  # v4.4.1
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+      # ...
+      # Releases criadas com o GITHUB_TOKEN não disparam o evento release.published
+      # em outros workflows. Por isso a atualização da tag móvel é acionada aqui.
+      - name: Acionar a atualização da tag de versão maior
+        if: steps.release.outputs.release_created == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.release.outputs.tag_name }}
+        run: gh workflow run 01-tag-principal.yml --repo "$GITHUB_REPOSITORY" --ref "$TAG"
+```
+
+A chave `continue-on-error: true` do passo `release` impede que a falha conhecida da política da organização derrube o job de imediato. O passo seguinte, omitido do trecho, testa `steps.release.outcome` e decide entre aviso e erro conforme a variável `PR_PELO_ACTIONS_BLOQUEADO`. A condição `steps.release.outputs.release_created == 'true'` faz o último passo rodar somente quando uma *release* foi de fato criada. O comando `gh workflow run` usa a *tag* recém-criada como referência da execução. O grupo de `concurrency` serializa as execuções para que dois *pushes* seguidos não disputem o mesmo *pull request* de *release*.
+
+```mermaid
+flowchart TB
+    A["Push no ramo main"]:::gatilho
+    subgraph job["Job release-please"]
+        B["Passo release-please<br/>continue-on-error"]:::etapa
+        C{"outcome<br/>é failure?"}:::verificacao
+        E{"PR_PELO_ACTIONS_BLOQUEADO<br/>é true?"}:::verificacao
+        D{"release<br/>criada?"}:::verificacao
+        H["gh workflow run<br/>01-tag-principal.yml"]:::etapa
+        I["Termina sem<br/>nova release"]:::etapa
+    end
+    F["Aviso e job com sucesso"]:::sucesso
+    G["Erro e exit 1"]:::falha
+    J[("Tag móvel vX<br/>atualizada")]:::artefato
+    A --> B --> C
+    C -- "sim" --> E
+    C -- "não" --> D
+    E -- "sim" --> F
+    E -- "não" --> G
+    D -- "sim" --> H --> J
+    D -- "não" --> I
+
+    classDef gatilho fill:#E8F1FB,stroke:#1F5FA8,color:#0B2545
+    classDef etapa fill:#FFFFFF,stroke:#5B6B7F,color:#1B2733
+    classDef verificacao fill:#FFF6E0,stroke:#B7791F,color:#5A3A00
+    classDef sucesso fill:#E6F4EA,stroke:#2E7D32,color:#123B17
+    classDef falha fill:#FDECEA,stroke:#C62828,color:#5B1111
+    classDef artefato fill:#F3E8FD,stroke:#6A3FB5,color:#2D1457
+```
+
+A ferramenta recebe a configuração de dois arquivos. O primeiro declara um único pacote na raiz do repositório, com o tipo `simple` e o caminho do registro de mudanças. O segundo é o manifesto, que guarda a última versão publicada como ponto de partida do cálculo.
+
+Arquivo completo: [`release-please-config.json`, linhas 1 a 10](https://github.com/arkhibr/devops-fluxos-c3dm/blob/main/release-please-config.json#L1-L10).
+
+```json
+{
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "include-v-in-tag": true,
+  "packages": {
+    ".": {
+      "release-type": "simple",
+      "changelog-path": "CHANGELOG.md"
+    }
+  }
+}
+```
+
+Arquivo completo: [`.release-please-manifest.json`, linhas 1 a 3](https://github.com/arkhibr/devops-fluxos-c3dm/blob/main/.release-please-manifest.json#L1-L3).
+
+```json
+{
+  ".": "1.0.1"
+}
+```
+
+A chave `include-v-in-tag` produz *tags* no formato `v1.0.1`, enquanto a chave `"."` do pacote indica que a versão vale para o repositório inteiro. O valor `1.0.1` do manifesto é a versão a partir da qual os próximos *commits* são contados pelo `release-please`.
+
+### Tag móvel da versão maior
+
+O terceiro é o `01-tag-principal.yml`, que mantém uma *tag* móvel com apenas o número maior da versão, como `v1`. Os cenários seguintes referenciam os *workflows* reutilizáveis deste repositório por `@v1`, de modo que os consumidores recebem as correções sem alterar a referência. Releases criadas com o `GITHUB_TOKEN` não disparam o evento `release` em outros *workflows*. Por isso o `01-release.yml` executa `gh workflow run 01-tag-principal.yml` logo depois de criar cada *release*, usando a *tag* recém-criada como referência da execução.
+
+Arquivo completo: [`.github/workflows/01-tag-principal.yml`, linhas 7 a 25](https://github.com/arkhibr/devops-fluxos-c3dm/blob/main/.github/workflows/01-tag-principal.yml#L7-L25).
+
+```yaml
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  tag-principal:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+      - name: Mover a tag da versão maior para esta release
+        run: |
+          [[ $GITHUB_REF_NAME =~ ^v[0-9]+\. ]] || { echo "A referência $GITHUB_REF_NAME não é uma tag de versão"; exit 1; }
+          principal="${GITHUB_REF_NAME%%.*}"
+          git tag -f "$principal"
+          git push -f origin "refs/tags/$principal"
+```
+
+O gatilho `workflow_dispatch` é o caminho usado pelo `01-release.yml` para acionar o *workflow*, enquanto o gatilho `release` cobre as *releases* publicadas manualmente, como a `v1.0.0` deste repositório. A expressão regular `^v[0-9]+\.` recusa qualquer referência que não seja uma *tag* de versão. A expansão `${GITHUB_REF_NAME%%.*}` remove tudo a partir do primeiro ponto, de modo que `v1.2.3` resulta em `v1`. Os dois comandos `git` reposicionam a *tag* no *commit* da *release* com `-f` e `push -f`, razão pela qual o *ruleset* do cenário 02 não contém regras de *tag*.
+
+### Arquivos do cenário
+
+| Arquivo | Papel |
+| --- | --- |
+| [`.github/workflows/01-titulo-pr.yml`](https://github.com/arkhibr/devops-fluxos-c3dm/blob/main/.github/workflows/01-titulo-pr.yml) | Valida o título do *pull request* pelo padrão *Conventional Commits*. |
+| [`.github/workflows/01-release.yml`](https://github.com/arkhibr/devops-fluxos-c3dm/blob/main/.github/workflows/01-release.yml) | Calcula a versão e mantém o *pull request* de *release*. |
+| [`.github/workflows/01-tag-principal.yml`](https://github.com/arkhibr/devops-fluxos-c3dm/blob/main/.github/workflows/01-tag-principal.yml) | Move a *tag* móvel da versão maior. |
+| [`release-please-config.json`](https://github.com/arkhibr/devops-fluxos-c3dm/blob/main/release-please-config.json) | Declara o pacote e o tipo de *release*. |
+| [`.release-please-manifest.json`](https://github.com/arkhibr/devops-fluxos-c3dm/blob/main/.release-please-manifest.json) | Registra a última versão publicada. |
+| [`version.txt`](https://github.com/arkhibr/devops-fluxos-c3dm/blob/main/version.txt) | Arquivo de versão atualizado pelo `release-please`. |
+| [`tests/pipelines/test_01_versionamento.py`](https://github.com/arkhibr/devops-fluxos-c3dm/blob/main/tests/pipelines/test_01_versionamento.py) | Testes estruturais dos três *workflows*. |
 
 ## Como executar
 

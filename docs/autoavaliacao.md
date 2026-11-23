@@ -82,7 +82,7 @@ flowchart TB
 | Fundacional | Os testes unitários, quando existem, rodam em um servidor central iniciados por uma pessoa. |
 | Novato | Os testes unitários rodam na esteira a cada alteração e a falha impede a integração. |
 | Intermediário | Testes de integração, que exercitam vários componentes juntos, são disparados automaticamente. |
-| Avançado | Testes de aceitação e de segurança fazem parte da esteira e reprovam a versão quando falham. |
+| Avançado | Testes de aceitação são disparados pela esteira. Testes de segurança e de desempenho são automatizados, mas iniciados manualmente. |
 | Especialista | Testes de regressão ponta a ponta rodam continuamente sobre o sistema completo. |
 
 ## Implantação contínua
@@ -108,6 +108,6 @@ O repositório atribui um único nível a cada cenário. Esse agrupamento é uma
 | Implantação | Sem cenário dedicado | Sem cenário dedicado | [Cenário 08](cenarios/08.md), sobre artefato único, e [cenário 09](cenarios/09.md), sobre ambientes | [Cenário 10](cenarios/10.md), sobre implantação *blue-green*, e [cenário 11](cenarios/11.md), sobre implantação canário | Sem cenário dedicado |
 | Transversal | Não se aplica | Não se aplica | Não se aplica | [Cenário 12](cenarios/12.md), sobre reaproveitamento da esteira. [Cenário 13](cenarios/13.md), sobre métricas da esteira | [Cenário 14](cenarios/14.md), sobre a aplicação da biblioteca a um sistema existente |
 
-O nível do repositório nem sempre coincide com o do modelo. Os testes de segurança dos cenários 06 e 07 aparecem no nível Intermediário do roteiro, embora o modelo os situe no nível Avançado do domínio de teste. Para avaliar um sistema vale o nível do modelo descrito nas tabelas acima. A coluna do repositório apenas ordena o estudo dos cenários na ordem em que o roteiro os apresenta.
+O nível do repositório nem sempre coincide com o do modelo. Os testes de segurança dos cenários 06 e 07 aparecem no nível Intermediário do roteiro, embora o modelo os situe no nível Avançado do domínio de teste. Neste repositório a prática vai além do modelo, porque os testes de segurança dos cenários 06 e 07 rodam automaticamente em cada *pull request* e reprovam o job quando encontram o problema. Essa execução automática é uma escolha do repositório e não um requisito do nível Avançado. Para avaliar um sistema vale o nível do modelo descrito nas tabelas acima. A coluna do repositório apenas ordena o estudo dos cenários na ordem em que o roteiro os apresenta.
 
 O cenário 14 inclui a repetição desta autoavaliação depois da adoção da biblioteca, de modo que a equipe compare as duas medições.
