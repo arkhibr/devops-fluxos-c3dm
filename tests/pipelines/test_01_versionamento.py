@@ -43,3 +43,14 @@ def test_tag_principal_dispara_em_release():
     assert "GITHUB_REF_NAME%%.*" in comandos
     assert comandos.index('git tag -f "$principal"') < comandos.index('git push -f origin "refs/tags/$principal"')
     assert "=~ ^v[0-9]+\\." in comandos and "exit 1" in comandos
+
+
+def test_release_tolera_somente_a_falha_conhecida_de_politica_da_organizacao():
+    lista = passos(carregar_workflow("01-release.yml"), "release-please")
+    release = next(p for p in lista if p.get("id") == "release")
+    assert release["continue-on-error"] is True
+    posterior = lista[lista.index(release) + 1]
+    assert "steps.release.outcome == 'failure'" in posterior["if"]
+    assert "PR_PELO_ACTIONS_BLOQUEADO" in posterior["env"]["PR_BLOQUEADO"]
+    assert "::warning" in posterior["run"]
+    assert "exit 1" in posterior["run"]

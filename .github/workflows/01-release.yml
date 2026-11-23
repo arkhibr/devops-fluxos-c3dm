@@ -21,10 +21,27 @@ jobs:
     steps:
       - name: Calcular a versão e manter o pull request de release
         id: release
+        # A política da organização pode impedir o Actions de abrir pull requests.
+        # O passo seguinte decide se a falha é essa limitação conhecida ou um erro real.
+        continue-on-error: true
         uses: googleapis/release-please-action@5c625bfb5d1ff62eadeeb3772007f7f66fdcf071  # v4.4.1
         with:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
+      - name: Tratar a falha do release-please
+        if: steps.release.outcome == 'failure'
+        env:
+          PR_BLOQUEADO: ${{ vars.PR_PELO_ACTIONS_BLOQUEADO }}
+        run: |
+          if [ "$PR_BLOQUEADO" = "true" ]; then
+            aviso="A organização não permite que o GitHub Actions crie ou aprove pull requests"
+            aviso="$aviso (PR_PELO_ACTIONS_BLOQUEADO=true). O release-please não abriu o pull request de release."
+            aviso="$aviso Publique a versão manualmente ou libere a opção em Settings, Actions, General."
+            echo "::warning title=Release sem pull request::$aviso"
+            exit 0
+          fi
+          echo "::error::O release-please falhou e a variável PR_PELO_ACTIONS_BLOQUEADO não é true. Consulte o log do passo anterior."
+          exit 1
       # Releases criadas com o GITHUB_TOKEN não disparam o evento release.published
       # em outros workflows. Por isso a atualização da tag móvel é acionada aqui.
       - name: Acionar a atualização da tag de versão maior

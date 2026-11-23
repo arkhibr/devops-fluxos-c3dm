@@ -6,3 +6,8 @@ rules:
     max: 140
   truthy:
     check-keys: false
+
+ignore: |
+  .venv/
+  node_modules/
+  site/

@@ -82,3 +82,19 @@ def test_05_paths():
         caminhos = wf["on"][evento]["paths"]
         assert "cenarios/05-teste-da-esteira/**" in caminhos
         assert f".github/workflows/{ARQUIVO}" in caminhos
+
+
+def test_05_workflow_exige_os_dois_erros_esperados_na_saida():
+    lista = passos(carregar_workflow(ARQUIVO), JOB)
+    lint = [p for p in lista if p.get("id") == "lint-exemplo"][0]
+    assert "actionlint-exemplo.txt" in lint["run"]
+    verificacao = lista[-1]
+    assert "steps.lint-exemplo.outcome == 'failure'" in verificacao["if"]
+    assert "grep -q 'refx'" in verificacao["run"]
+    assert "grep -q 'runs-on'" in verificacao["run"]
+
+
+def test_05_readme_usa_o_digest_fixado():
+    texto = (RAIZ / "cenarios" / "05-teste-da-esteira" / "README.md").read_text(encoding="utf-8")
+    assert _imagem_actionlint() in texto
+    assert "actionlint:latest" not in texto
