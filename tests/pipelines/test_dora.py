@@ -31,7 +31,10 @@ def test_frequencia_ignora_homologacao_e_falhas():
 
 
 def test_prazo_entrega_mediana():
-    # PR 1: 49h, PR 2: 25h, PR 3: 13h, PR 4: 73h (pula o deployment com falha). Mediana de 13, 25, 49, 73.
+    # Por PR: 1 = 49 h, 2 = 25 h, 3 = 13 h, 4 = 73 h. O PR 4 foi mesclado em 05/11 09:30, o deployment
+    # de 05/11 10:00 (id 4) falhou e a produção é o id 5, de 07/11 09:00: 07/11 09:00 - 04/11 08:00 = 73 h.
+    # Mediana de 13, 25, 49, 73 = (25 + 49) / 2 = 37 h. Se o deployment com falha fosse usado, o PR 4
+    # daria 26 h e a mediana cairia para 25,5 h.
     assert dora.prazo_entrega(_ler("prs.json"), _ler("deployments.json")) == timedelta(hours=37)
 
 
