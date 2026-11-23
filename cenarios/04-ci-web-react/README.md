@@ -8,30 +8,154 @@ O *lint* é a análise estática que aponta erros prováveis e desvios de estilo
 
 ## Workflow do cenário
 
-A aplicação fica em `apps/web` e usa React, Vite, Vitest e ESLint. O *workflow* `04-web.yml` roda em *pull requests* e em *pushes* para o `main` que alterem `apps/web/**` ou o próprio arquivo do *workflow*. O filtro de caminhos inclui o próprio arquivo para que uma mudança apenas no YAML também seja verificada. O job `ci-web` não contém passos próprios. Ele chama o *workflow* reutilizável `lib-web-ci.yml`, apresentado no [cenário 12](../../docs/cenarios/12.md), com a pasta `apps/web` e o Node 24. O diagrama a seguir mostra a ordem dos passos que a biblioteca executa em nome do job.
+A aplicação fica em `apps/web` e usa React, Vite, Vitest e ESLint. O diagrama a seguir mostra o caminho completo e a ordem das verificações. O *workflow* `04-web.yml` é apenas um chamador, enquanto o trabalho é feito pelo *workflow* reutilizável `lib-web-ci.yml`, apresentado no [cenário 12](../../docs/cenarios/12.md).
 
 ```mermaid
 flowchart TB
-    A["Checkout do repositório"] --> B["Instalação do Node 24 com cache do npm"]
-    B --> C["npm ci"]
-    C --> D["npm run lint"]
-    D --> E["npm run typecheck"]
-    E --> F["npm test com cobertura"]
-    F --> G["npm run build"]
-    G --> H["Upload de apps/web/dist como artefato web-dist"]
+    subgraph cham["Chamador 04-web.yml"]
+        T["Pull request ou push<br/>em apps/web"]:::gatilho
+        J["Job ci-web<br/>uses lib-web-ci"]:::etapa
+    end
+    subgraph lib["Job integracao em lib-web-ci.yml"]
+        A["Checkout, setup-node 24<br/>e npm ci"]:::etapa
+        subgraph ver["Verificações em ordem de custo"]
+            L["npm run lint"]:::verificacao
+            Y["npm run typecheck"]:::verificacao
+            V["npm test<br/>limites 80 e 80"]:::verificacao
+        end
+        B["npm run build"]:::etapa
+        U[("Artefato web-dist")]:::artefato
+    end
+    F["Job reprova e<br/>resumo-falha registra"]:::falha
+    OK["Verificação ci-web<br/>aprovada"]:::sucesso
+    T --> J --> A --> L --> Y --> V --> B --> U --> OK
+    ver -- "qualquer falha" --> F
+
+    classDef gatilho fill:#E8F1FB,stroke:#1F5FA8,color:#0B2545
+    classDef etapa fill:#FFFFFF,stroke:#5B6B7F,color:#1B2733
+    classDef verificacao fill:#FFF6E0,stroke:#B7791F,color:#5A3A00
+    classDef sucesso fill:#E6F4EA,stroke:#2E7D32,color:#123B17
+    classDef falha fill:#FDECEA,stroke:#C62828,color:#5B1111
+    classDef artefato fill:#F3E8FD,stroke:#6A3FB5,color:#2D1457
 ```
 
-O job do chamador se chama `ci-web` porque o nome `build` já pertence à verificação obrigatória do portal. Dois jobs com o mesmo nome tornariam ambíguo o contexto exigido pelo *ruleset* do cenário 02.
+### O chamador 04-web.yml
 
-O passo de instalação do Node usa a *action* `actions/setup-node` com `node-version: 24` e `cache: npm`. O parâmetro `cache-dependency-path` aponta para o `package-lock.json` da pasta informada na entrada `diretorio`, no caso `apps/web/package-lock.json`, porque o arquivo de dependências não está na raiz do repositório e a *action* o procuraria ali. A chave do *cache* deriva do conteúdo desse arquivo, de modo que a pasta de pacotes baixados é reaproveitada enquanto as dependências não mudam.
+O *workflow* roda em *pull requests* e em *pushes* para o `main` que alterem `apps/web/**`, a biblioteca ou o próprio arquivo do *workflow*.
 
-O comando `npm ci` instala exatamente as versões registradas no `package-lock.json` e falha se o arquivo divergir do `package.json`. O comando `npm install` pode atualizar o arquivo de travamento e produzir instalações diferentes entre execuções, o que contraria o objetivo de repetibilidade da esteira.
+Arquivo completo: [`.github/workflows/04-web.yml`, linhas 3 a 26](https://github.com/arkhibr/devops-fluxos-c3dm/blob/main/.github/workflows/04-web.yml#L3-L26).
 
-A ordem dos passos segue o custo e a natureza de cada falha, das mais baratas de detectar para as mais caras. O *lint* e a verificação de tipos não executam código e costumam terminar antes dos testes, razão pela qual vêm antes deles. Os testes rodam com `vitest run --coverage`. O Vitest termina com erro quando a cobertura de linhas ou de ramos fica abaixo de 80%, pois o limite está em `thresholds` na configuração. A compilação de produção vem depois dos testes. O passo final envia a pasta `apps/web/dist` como artefato de nome `web-dist`. O parâmetro `if-no-files-found: error` impede que o envio de uma pasta vazia passe despercebido como sucesso.
+```yaml
+on:
+  pull_request:
+    paths:
+      - apps/web/**
+      - .github/workflows/04-web.yml
+      - .github/workflows/lib-web-ci.yml
+      - .github/actions/resumo-falha/**
+# ...
+permissions:
+  contents: read
 
-O *workflow* declara somente `contents: read` como permissão do `GITHUB_TOKEN`, suficiente para obter o código. O envio de artefatos usa um serviço interno do GitHub Actions e dispensa permissão adicional.
+jobs:
+  ci-web:
+    uses: ./.github/workflows/lib-web-ci.yml
+    with:
+      diretorio: apps/web
+      node-version: '24'
+```
 
-Os testes de `tests/pipelines/test_04_web.py` conferem a ordem dos passos, o uso do Node 24 com o *cache* do arquivo de travamento correto, o envio de `apps/web/dist` como `web-dist` e o filtro de caminhos com o próprio arquivo. Conferem também que o nome do job não colide com as verificações obrigatórias.
+O filtro `paths` inclui o próprio arquivo e a biblioteca para que uma mudança apenas no YAML também seja verificada. As entradas informam a pasta da aplicação e o Node 24. O job se chama `ci-web` porque o nome `build` já pertence à verificação obrigatória do portal. Dois jobs com o mesmo nome tornariam ambíguo o contexto exigido pelo *ruleset* do cenário 02.
+
+### A biblioteca lib-web-ci.yml
+
+O primeiro trecho mostra o diretório de trabalho, a instalação do Node e a instalação das dependências.
+
+Arquivo completo: [`.github/workflows/lib-web-ci.yml`, linhas 24 a 37](https://github.com/arkhibr/devops-fluxos-c3dm/blob/main/.github/workflows/lib-web-ci.yml#L24-L37).
+
+```yaml
+  integracao:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.diretorio }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1  # v7.1.0
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: npm
+          cache-dependency-path: ${{ inputs.diretorio }}/package-lock.json
+      - name: Instalar dependências a partir do lockfile
+        run: npm ci
+```
+
+O bloco `defaults.run.working-directory` faz todos os comandos `run` rodarem em `apps/web`. A *action* `actions/setup-node` usa `cache: npm`. O parâmetro `cache-dependency-path` aponta para o `package-lock.json` da pasta informada, porque o arquivo de dependências não está na raiz do repositório e a *action* o procuraria ali. A chave do *cache* deriva do conteúdo desse arquivo, de modo que os pacotes baixados são reaproveitados enquanto as dependências não mudam. O comando `npm ci` instala exatamente as versões registradas no `package-lock.json` e falha se o arquivo divergir do `package.json`. O comando `npm install` pode atualizar o arquivo de travamento e produzir instalações diferentes entre execuções, o que contraria o objetivo de repetibilidade da esteira.
+
+O segundo trecho mostra as verificações, a compilação e o envio do artefato.
+
+Arquivo completo: [`.github/workflows/lib-web-ci.yml`, linhas 38 a 56](https://github.com/arkhibr/devops-fluxos-c3dm/blob/main/.github/workflows/lib-web-ci.yml#L38-L56).
+
+```yaml
+      - name: Analisar o código com ESLint
+        run: npm run lint
+      - name: Verificar tipos com o TypeScript
+        run: npm run typecheck
+      - name: Testar com os limites de cobertura do projeto
+        run: npm test
+      - name: Compilar para produção
+        run: npm run build
+      - name: Publicar o resultado da compilação
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
+        with:
+          name: web-dist
+          path: ${{ inputs.diretorio }}/dist
+          if-no-files-found: error
+      - name: Resumir a falha
+        if: ${{ failure() }}
+        uses: arkhibr/devops-fluxos-c3dm/.github/actions/resumo-falha@v1
+        with:
+          etapa: CI da aplicação web em ${{ inputs.diretorio }}
+```
+
+A ordem segue o custo e a natureza de cada falha, das mais baratas de detectar para as mais caras. O *lint* e a verificação de tipos não executam código e costumam terminar antes dos testes, enquanto a compilação de produção vem depois deles. O passo de envio publica `apps/web/dist` como artefato de nome `web-dist`. O parâmetro `if-no-files-found: error` impede que o envio de uma pasta vazia seja aceito como sucesso. O último passo, condicionado a `failure()`, grava no resumo da execução qual etapa falhou.
+
+### Limites de cobertura no Vitest
+
+O script `npm test` executa `vitest run --coverage`. Os limites ficam na configuração do projeto, fora do *workflow*, de modo que valem também para quem roda os testes localmente.
+
+Arquivo completo: [`apps/web/vitest.config.ts`, linhas 4 a 16](https://github.com/arkhibr/devops-fluxos-c3dm/blob/main/apps/web/vitest.config.ts#L4-L16).
+
+```typescript
+export default defineConfig({
+  plugins: [react()],
+  test: {
+    environment: 'jsdom',
+    coverage: {
+      provider: 'v8',
+      include: ['src/**/*.{ts,tsx}'],
+      exclude: ['src/**/*.test.{ts,tsx}', 'src/main.tsx'],
+      reporter: ['text', 'lcov'],
+      thresholds: { lines: 80, branches: 80 },
+    },
+  },
+})
+```
+
+O bloco `thresholds` com `lines: 80` e `branches: 80` faz o Vitest terminar com erro quando a cobertura de linhas ou de ramos fica abaixo de 80%. Esse erro reprova o passo de testes da biblioteca. A lista `include` mede apenas o código de `src` e a lista `exclude` retira os arquivos de teste e o ponto de entrada `main.tsx` do cálculo. O reporte `lcov` gera um arquivo que ferramentas externas podem ler para montar relatórios próprios.
+
+O *workflow* declara somente `contents: read` como permissão do `GITHUB_TOKEN`, suficiente para obter o código. O envio de artefatos usa um serviço interno do GitHub Actions e dispensa permissão adicional. Os testes de `tests/pipelines/test_04_web.py` conferem a ordem dos passos, o uso do Node 24 com o *cache* do arquivo de travamento correto, o envio de `apps/web/dist` como `web-dist` e o filtro de caminhos com o próprio arquivo.
+
+### Arquivos do cenário
+
+| Arquivo | Papel |
+| --- | --- |
+| [`.github/workflows/04-web.yml`](https://github.com/arkhibr/devops-fluxos-c3dm/blob/main/.github/workflows/04-web.yml) | Chamador que aciona a biblioteca nos eventos da aplicação web. |
+| [`.github/workflows/lib-web-ci.yml`](https://github.com/arkhibr/devops-fluxos-c3dm/blob/main/.github/workflows/lib-web-ci.yml) | Biblioteca que instala, analisa, testa, compila e publica o artefato. |
+| [`apps/web/vitest.config.ts`](https://github.com/arkhibr/devops-fluxos-c3dm/blob/main/apps/web/vitest.config.ts) | Configuração do Vitest com os limites de cobertura. |
+| [`apps/web/package.json`](https://github.com/arkhibr/devops-fluxos-c3dm/blob/main/apps/web/package.json) | Declara os *scripts* `lint`, `typecheck`, `test` e `build`. |
+| [`.github/actions/resumo-falha/action.yml`](https://github.com/arkhibr/devops-fluxos-c3dm/blob/main/.github/actions/resumo-falha/action.yml) | *Composite action* que grava a falha no resumo da execução. |
+| [`tests/pipelines/test_04_web.py`](https://github.com/arkhibr/devops-fluxos-c3dm/blob/main/tests/pipelines/test_04_web.py) | Testes estruturais do chamador e da ordem dos passos. |
 
 ## Como executar
 
