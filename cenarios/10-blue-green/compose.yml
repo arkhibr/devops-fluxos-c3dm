@@ -1,0 +1,25 @@
+# Duas cores da API e um roteador NGINX na frente delas.
+# As variáveis sem valor padrão são obrigatórias: se alguma faltar, o Compose
+# interrompe com erro em vez de passar uma string vazia ao contêiner.
+# O roteador sobe com a configuração padrão do NGINX. O script trocar-cor.sh
+# grava nele o upstream da cor ativa e recarrega o processo.
+services:
+  blue:
+    image: ghcr.io/arkhibr/devops-fluxos-c3dm-api:sha-${SHA7_BLUE:?defina SHA7_BLUE com o sha7 da cor blue}
+    environment:
+      APP_COLOR: blue
+      APP_VERSION: ${VERSAO_BLUE:?defina VERSAO_BLUE com o sha do commit da cor blue}
+    ports:
+      - "127.0.0.1:8091:8080"
+  green:
+    image: ghcr.io/arkhibr/devops-fluxos-c3dm-api:sha-${SHA7_GREEN:?defina SHA7_GREEN com o sha7 da cor green}
+    environment:
+      APP_COLOR: green
+      APP_VERSION: ${VERSAO_GREEN:?defina VERSAO_GREEN com o sha do commit da cor green}
+    ports:
+      - "127.0.0.1:8092:8080"
+  roteador:
+    image: nginx:1.27-alpine
+    container_name: roteador
+    ports:
+      - "127.0.0.1:8081:80"

@@ -22,7 +22,7 @@ Intermediário:
 
 Avançado:
 
-- 10 Implantação *blue-green*
+- [10 Implantação *blue-green* com reversão automática](10.md)
 - 11 Implantação canário
 - 12 Biblioteca de *workflows* reutilizáveis e *composite actions*
 - 13 Métricas DORA e métricas de esteira

@@ -1,0 +1,14 @@
+# Modelo da configuração do roteador. O script trocar-cor.sh substitui COR_ATIVA
+# pelo nome do serviço da cor que deve receber o tráfego (blue ou green).
+upstream api {
+    server COR_ATIVA:8080;
+}
+
+server {
+    listen 80;
+
+    location / {
+        proxy_pass http://api;
+        proxy_next_upstream off;
+    }
+}

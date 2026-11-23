@@ -1,0 +1,130 @@
+name: 10 Blue-green
+
+on:
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: Prefixo de 7 a 40 caracteres hexadecimais do commit da versão nova, que será a cor green
+        required: true
+        type: string
+      sha_anterior:
+        description: Prefixo do commit da versão em produção, que será a cor blue. Vazio usa o mesmo commit da versão nova
+        required: false
+        type: string
+        default: ""
+      simular_falha:
+        description: Faz a verificação depois da troca falhar, para demonstrar a reversão automática
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  packages: read
+
+env:
+  REGISTRO: ghcr.io/arkhibr/devops-fluxos-c3dm
+
+jobs:
+  preparar:
+    runs-on: ubuntu-latest
+    outputs:
+      sha: ${{ steps.resolver.outputs.sha }}
+      sha7: ${{ steps.resolver.outputs.sha7 }}
+      sha_anterior: ${{ steps.resolver.outputs.sha_anterior }}
+      sha7_anterior: ${{ steps.resolver.outputs.sha7_anterior }}
+    steps:
+      - name: Autenticar no GHCR com o GITHUB_TOKEN
+        uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550  # v4.8.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Validar as entradas e resolver os sha completos
+        id: resolver
+        env:
+          SHA_NOVO: ${{ inputs.sha }}
+          SHA_ANTERIOR: ${{ inputs.sha_anterior }}
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORIO: ${{ github.repository }}
+        run: |
+          SHA_ANTERIOR="${SHA_ANTERIOR:-$SHA_NOVO}"
+          for entrada in "$SHA_NOVO" "$SHA_ANTERIOR"; do
+            if ! [[ "$entrada" =~ ^[0-9a-f]{7,40}$ ]]; then
+              echo "::error::Cada sha deve ter de 7 a 40 caracteres hexadecimais em minúsculas."
+              exit 1
+            fi
+          done
+          sha=$(gh api "repos/${REPOSITORIO}/commits/${SHA_NOVO}" --jq .sha)
+          sha_anterior=$(gh api "repos/${REPOSITORIO}/commits/${SHA_ANTERIOR}" --jq .sha)
+          {
+            echo "sha=${sha}"
+            echo "sha7=${sha:0:7}"
+            echo "sha_anterior=${sha_anterior}"
+            echo "sha7_anterior=${sha_anterior:0:7}"
+          } >> "$GITHUB_OUTPUT"
+      - name: Conferir que as duas imagens existem no registro
+        env:
+          SHA7: ${{ steps.resolver.outputs.sha7 }}
+          SHA7_ANTERIOR: ${{ steps.resolver.outputs.sha7_anterior }}
+        run: |
+          for sha7 in "$SHA7" "$SHA7_ANTERIOR"; do
+            imagem="${REGISTRO}-api:sha-${sha7}"
+            if ! docker buildx imagetools inspect "$imagem" > /dev/null; then
+              echo "::error::A imagem ${imagem} não existe. Ela só é publicada quando o workflow 08 roda sobre o commit."
+              exit 1
+            fi
+          done
+
+  implantar:
+    needs: preparar
+    runs-on: ubuntu-latest
+    environment: producao
+    concurrency:
+      group: implantacao-producao
+      cancel-in-progress: false
+    env:
+      SHA7_BLUE: ${{ needs.preparar.outputs.sha7_anterior }}
+      VERSAO_BLUE: ${{ needs.preparar.outputs.sha_anterior }}
+      SHA7_GREEN: ${{ needs.preparar.outputs.sha7 }}
+      VERSAO_GREEN: ${{ needs.preparar.outputs.sha }}
+      COMPOSE_PROJECT_NAME: c3dm-blue-green
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+      - name: Autenticar no GHCR com o GITHUB_TOKEN
+        uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550  # v4.8.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Subir a cor blue com a versão em produção e apontar o roteador para ela
+        run: |
+          docker compose -f cenarios/10-blue-green/compose.yml up -d blue roteador
+          cenarios/10-blue-green/trocar-cor.sh blue
+          cenarios/10-blue-green/verificar-cor.sh 8081 blue "$VERSAO_BLUE"
+      - name: Subir a cor green, ainda inativa, com a versão nova
+        run: docker compose -f cenarios/10-blue-green/compose.yml up -d green
+      - name: Verificar a cor green diretamente na porta dela
+        run: cenarios/10-blue-green/verificar-cor.sh 8092 green "$VERSAO_GREEN"
+      - name: Trocar o roteador para a cor green
+        run: cenarios/10-blue-green/trocar-cor.sh green
+      - name: Conferir pelo roteador que a cor green responde
+        env:
+          SIMULAR_FALHA: ${{ inputs.simular_falha }}
+        run: |
+          esperada="$VERSAO_GREEN"
+          if [ "$SIMULAR_FALHA" = "true" ]; then
+            echo "::warning::Falha simulada: a verificação espera uma versão que nenhuma cor serve."
+            esperada="versao-inexistente"
+          fi
+          cenarios/10-blue-green/verificar-cor.sh 8081 green "$esperada"
+      - name: Reverter o roteador para a cor blue
+        if: failure()
+        run: |
+          docker compose -f cenarios/10-blue-green/compose.yml logs green roteador
+          cenarios/10-blue-green/trocar-cor.sh blue
+          cenarios/10-blue-green/verificar-cor.sh 8081 blue "$VERSAO_BLUE"
+          echo "::warning::Reversão concluída: o roteador voltou para a cor blue e a implantação foi reprovada."
+      - name: Remover os contêineres
+        if: always()
+        run: docker compose -f cenarios/10-blue-green/compose.yml down -v
