@@ -8,41 +8,215 @@ O cenário 09 colocou uma imagem em cada ambiente. Este cenário acrescenta o me
 
 ## Workflow do cenário
 
-O *workflow* `10-blue-green.yml` só dispara por `workflow_dispatch`, porque uma implantação em produção deve ser uma decisão explícita. Ele declara no nível superior as permissões `contents: read` e `packages: read`. Recebe três entradas. A entrada `sha` identifica o *commit* da versão nova, que roda na cor green. A entrada opcional `sha_anterior` identifica o *commit* da versão em produção, que roda na cor blue. Quando ela fica vazia, as duas cores usam a mesma imagem e diferem apenas nas variáveis `APP_COLOR` e `APP_VERSION`. A entrada booleana `simular_falha` provoca de propósito a falha da verificação posterior à troca, para que a reversão possa ser observada sem alterar o código da API.
+O *workflow* `10-blue-green.yml` só dispara por `workflow_dispatch`, porque uma implantação em produção deve ser uma decisão explícita. Ele declara no nível superior as permissões `contents: read` e `packages: read` e recebe três entradas. A entrada `sha` identifica o *commit* da versão nova, que roda na cor green. A entrada opcional `sha_anterior` identifica o *commit* da versão em produção, que roda na cor blue. Quando ela fica vazia, as duas cores usam a mesma imagem e diferem apenas nas variáveis `APP_COLOR` e `APP_VERSION`. A entrada booleana `simular_falha` provoca de propósito a falha da verificação posterior à troca, para que a reversão possa ser observada sem alterar o código da API.
 
-O job `preparar` valida cada *sha* por variável de ambiente com a expressão `^[0-9a-f]{7,40}$`, resolve o *sha* completo pela API do GitHub e confere com `docker buildx imagetools inspect` que as duas imagens `sha-<sha7>` existem no GHCR. Esses nomes de job não coincidem com as verificações obrigatórias do repositório.
+```mermaid
+flowchart TB
+    T["Execução manual<br/>sha, sha_anterior,<br/>simular_falha"]:::gatilho
+    subgraph jp["Job preparar"]
+        P["Validar sha, resolver<br/>e conferir imagens"]:::etapa
+    end
+    subgraph ji["Job implantar, environment producao"]
+        B["Subir blue e<br/>apontar roteador"]:::etapa
+        G["Subir green<br/>sem tráfego"]:::etapa
+        V1{"Green responde<br/>na porta direta?"}:::verificacao
+        S["Trocar roteador<br/>para green"]:::etapa
+        V2{"Roteador serve<br/>green na versão nova?"}:::verificacao
+        RB["Reverter para blue<br/>e conferir"]:::etapa
+    end
+    OK["Green em produção"]:::sucesso
+    X["Job reprovado,<br/>blue intacta"]:::falha
+    T --> P --> B --> G --> V1
+    V1 -- "sim" --> S --> V2
+    V1 -- "não" --> X
+    V2 -- "sim" --> OK
+    V2 -- "não" --> RB --> X
 
-O job `implantar` declara `environment: producao`, o que gera um registro de *deployment* por execução. Ele usa o grupo de `concurrency` `implantacao-producao` com `cancel-in-progress: false`. O mesmo grupo é usado pelo cenário 09, de modo que duas trocas de cor nunca ocorrem ao mesmo tempo sobre o mesmo ambiente. O ambiente `producao` só aceita implantações a partir do ramo `main`, conforme a política de ramos configurada no cenário 09. Os passos do job seguem a ordem abaixo. A verificação direta da cor green antes da troca impede que uma versão defeituosa chegue ao tráfego dos usuários.
+    classDef gatilho fill:#E8F1FB,stroke:#1F5FA8,color:#0B2545
+    classDef etapa fill:#FFFFFF,stroke:#5B6B7F,color:#1B2733
+    classDef verificacao fill:#FFF6E0,stroke:#B7791F,color:#5A3A00
+    classDef sucesso fill:#E6F4EA,stroke:#2E7D32,color:#123B17
+    classDef falha fill:#FDECEA,stroke:#C62828,color:#5B1111
+    classDef artefato fill:#F3E8FD,stroke:#6A3FB5,color:#2D1457
+```
 
-1. Sobe a cor blue com a versão anterior e o roteador. O script `trocar-cor.sh blue` grava o destino no roteador e o script `verificar-cor.sh` confirma, pelo roteador, que a cor blue responde com a versão anterior.
-2. Sobe a cor green com a versão nova, ainda sem tráfego.
-3. Verifica a cor green diretamente na porta 8092, sem passar pelo roteador. Se a versão nova não iniciar ou responder de forma errada, o job falha antes de qualquer troca e nenhum usuário é afetado.
-4. Troca o roteador para a cor green com `trocar-cor.sh green`.
-5. Confere pelo roteador, na porta 8081, que a cor green responde com a versão nova.
-6. Em caso de falha de qualquer passo anterior, o passo com `if: failure()` mostra os logs e chama `trocar-cor.sh blue`. Em seguida confirma que o roteador voltou a responder com a cor blue e a versão anterior. Por fim emite um aviso. O job termina como reprovado, porque a implantação não foi concluída.
-7. O último passo, com `if: always()`, remove contêineres e volumes com `docker compose down -v`.
-
-O script `trocar-cor.sh` recebe `blue` ou `green` e substitui o marcador `COR_ATIVA` do arquivo `nginx.conf.tmpl` pelo nome do serviço. O resultado é copiado para o contêiner `roteador` com `docker cp`, validado com `nginx -t` e aplicado com `nginx -s reload`. A cópia substitui a montagem de volume e permite rodar o script em qualquer máquina com Docker, inclusive onde o diretório do repositório não é visível ao motor de contêineres.
-
-O arquivo `compose.yml` usa variáveis na forma `${VARIAVEL:?mensagem}`, de modo que nenhuma variável `APP_*` chega vazia ao contêiner. O script `verificar-cor.sh` consulta `GET /api/v1/versao` com até trinta tentativas e confere os campos `cor` e `versao`. Logo após a troca, uma consulta isolada ainda pode atingir a cor antiga por alguns instantes, pois o NGINX encerra os processos antigos de forma gradual. É por isso que a verificação repete a consulta em vez de aceitar uma única resposta.
+A sequência a seguir detalha a troca e a reversão entre as cores. A cor green é verificada pela porta direta 8092 antes de receber tráfego e a reversão ocorre apenas quando a conferência pelo roteador na porta 8081 falha.
 
 ```mermaid
 sequenceDiagram
+    autonumber
     participant W as Workflow
     participant R as Roteador NGINX
     participant B as Cor blue
     participant G as Cor green
     W->>B: Sobe a versão anterior
-    W->>R: Aponta para blue
+    W->>R: trocar-cor.sh blue
     W->>G: Sobe a versão nova, sem tráfego
-    W->>G: Verifica pela porta direta
-    W->>R: Troca para green
-    W->>R: Confere a versão nova pelo roteador
+    W->>G: Verifica pela porta 8092
+    W->>R: trocar-cor.sh green
+    W->>R: Confere green na porta 8081
     alt Verificação falha
-        W->>R: Reverte para blue
-        W->>R: Confirma a versão anterior
+        rect rgb(253, 236, 234)
+            W->>R: trocar-cor.sh blue
+            W->>R: Confirma a versão anterior
+            Note over W,R: Job termina reprovado
+        end
+    else Verificação passa
+        rect rgb(230, 244, 234)
+            Note over R,G: Todo o tráfego está em green
+        end
     end
 ```
+
+### Preparação e ambiente de produção
+
+O *job* `preparar` valida cada *sha* por variável de ambiente com a expressão `^[0-9a-f]{7,40}$`, resolve o *sha* completo pela API do GitHub e confere com `docker buildx imagetools inspect` que as duas imagens `sha-<sha7>` existem no GHCR. O *job* `implantar` recebe os resultados e declara o ambiente.
+
+Arquivo completo: [`.github/workflows/10-blue-green.yml`, linhas 79 a 92](https://github.com/arkhibr/devops-fluxos-c3dm/blob/main/.github/workflows/10-blue-green.yml#L79-L92).
+
+```yaml
+  implantar:
+    needs: preparar
+    runs-on: ubuntu-latest
+    environment: producao
+    concurrency:
+      group: implantacao-producao
+      cancel-in-progress: false
+    env:
+      SHA7_BLUE: ${{ needs.preparar.outputs.sha7_anterior }}
+      VERSAO_BLUE: ${{ needs.preparar.outputs.sha_anterior }}
+      SHA7_GREEN: ${{ needs.preparar.outputs.sha7 }}
+      VERSAO_GREEN: ${{ needs.preparar.outputs.sha }}
+      COMPOSE_PROJECT_NAME: c3dm-blue-green
+    steps:
+```
+
+O `environment: producao` gera um registro de *deployment* por execução. O grupo de *concurrency* `implantacao-producao` é o mesmo do cenário 09, de modo que duas trocas de cor nunca ocorrem ao mesmo tempo sobre o mesmo ambiente. O ambiente só aceita implantações a partir do ramo `main`, conforme a política de ramos configurada no cenário 09. As variáveis `SHA7_BLUE`, `SHA7_GREEN` e as de versão alimentam o `compose.yml`, que as exige com `${VARIAVEL:?mensagem}`.
+
+### O roteador e o script de troca
+
+O roteador é o NGINX e o arquivo `nginx.conf.tmpl` guarda a configuração com um marcador no lugar do destino.
+
+Arquivo completo: [`cenarios/10-blue-green/nginx.conf.tmpl`, linhas 3 a 13](https://github.com/arkhibr/devops-fluxos-c3dm/blob/main/cenarios/10-blue-green/nginx.conf.tmpl#L3-L13).
+
+```nginx
+upstream api {
+    server COR_ATIVA:8080;
+}
+
+server {
+    listen 80;
+
+    location / {
+        proxy_pass http://api;
+    }
+}
+```
+
+O marcador `COR_ATIVA` é substituído pelo nome do serviço da cor que recebe o tráfego. O bloco `upstream` contém um único destino, de modo que toda requisição vai para a cor ativa.
+
+Arquivo completo: [`cenarios/10-blue-green/trocar-cor.sh`, linhas 8 a 22](https://github.com/arkhibr/devops-fluxos-c3dm/blob/main/cenarios/10-blue-green/trocar-cor.sh#L8-L22).
+
+```bash
+cor="${1:-}"
+if [ "$cor" != "blue" ] && [ "$cor" != "green" ]; then
+  echo "Uso: $0 <blue|green>" >&2
+  exit 2
+fi
+
+pasta="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+temporario="$(mktemp)"
+trap 'rm -f "$temporario"' EXIT
+
+sed "s/COR_ATIVA/${cor}/" "${pasta}/nginx.conf.tmpl" > "$temporario"
+docker cp "$temporario" roteador:/etc/nginx/conf.d/default.conf
+docker exec roteador nginx -t
+docker exec roteador nginx -s reload
+echo "Roteador apontado para ${cor}."
+```
+
+O *script* recebe `blue` ou `green` e gera a configuração com `sed`. Em seguida copia o resultado para o contêiner `roteador` com `docker cp`, valida com `nginx -t` e aplica com `nginx -s reload`. A cópia substitui a montagem de volume e permite rodar o *script* em qualquer máquina com Docker, inclusive onde o diretório do repositório não é visível ao motor de contêineres. O comando `nginx -t` impede que uma configuração inválida chegue ao `reload` e derrube o roteador do cenário 10.
+
+### Troca de cor
+
+Os passos do *job* seguem a ordem da sequência. A verificação direta da cor green antes da troca impede que uma versão defeituosa chegue ao tráfego dos usuários.
+
+Arquivo completo: [`.github/workflows/10-blue-green.yml`, linhas 100 a 110](https://github.com/arkhibr/devops-fluxos-c3dm/blob/main/.github/workflows/10-blue-green.yml#L100-L110).
+
+```yaml
+      - name: Subir a cor blue com a versão em produção e apontar o roteador para ela
+        run: |
+          docker compose -f cenarios/10-blue-green/compose.yml up -d blue roteador
+          cenarios/10-blue-green/trocar-cor.sh blue
+          cenarios/10-blue-green/verificar-cor.sh 8081 blue "$VERSAO_BLUE"
+      - name: Subir a cor green, ainda inativa, com a versão nova
+        run: docker compose -f cenarios/10-blue-green/compose.yml up -d green
+      - name: Verificar a cor green diretamente na porta dela
+        run: cenarios/10-blue-green/verificar-cor.sh 8092 green "$VERSAO_GREEN"
+      - name: Trocar o roteador para a cor green
+        run: cenarios/10-blue-green/trocar-cor.sh green
+```
+
+O primeiro passo sobe a cor blue e o roteador, aponta o roteador para blue e confirma pelo roteador que ela responde com a versão anterior. A cor green sobe sem tráfego e é verificada na porta 8092. Se a versão nova não iniciar ou responder de forma errada, o *job* falha antes de qualquer troca e nenhum usuário é afetado. A troca em si ocorre quando o passo seguinte executa `trocar-cor.sh green` e o roteador passa a enviar todo o tráfego à porta 8080 da cor green.
+
+Arquivo completo: [`cenarios/10-blue-green/verificar-cor.sh`, linhas 15 a 26](https://github.com/arkhibr/devops-fluxos-c3dm/blob/main/cenarios/10-blue-green/verificar-cor.sh#L15-L26).
+
+```bash
+resposta=""
+for _ in $(seq 1 30); do
+  if resposta=$(curl -fsS --max-time 5 "http://127.0.0.1:${porta}/api/v1/versao" 2>/dev/null) \
+    && [ "$(jq -r .cor <<< "$resposta")" = "$cor_esperada" ] \
+    && [ "$(jq -r .versao <<< "$resposta")" = "$versao_esperada" ]; then
+    echo "Porta ${porta}: ${resposta}"
+    exit 0
+  fi
+  sleep 2
+done
+echo "::error::Porta ${porta}: esperado cor=${cor_esperada} e versao=${versao_esperada}, recebido: ${resposta:-sem resposta}"
+exit 1
+```
+
+O *script* de verificação consulta `GET /api/v1/versao` com até trinta tentativas de dois segundos e confere os campos `cor` e `versao`. Logo após a troca, uma consulta isolada ainda pode atingir a cor antiga por alguns instantes, pois o NGINX encerra os processos antigos de forma gradual. É por isso que a verificação repete a consulta em vez de aceitar uma única resposta.
+
+### Verificação posterior e reversão
+
+Arquivo completo: [`.github/workflows/10-blue-green.yml`, linhas 111 a 130](https://github.com/arkhibr/devops-fluxos-c3dm/blob/main/.github/workflows/10-blue-green.yml#L111-L130).
+
+```yaml
+      - name: Conferir pelo roteador que a cor green responde
+        env:
+          SIMULAR_FALHA: ${{ inputs.simular_falha }}
+        run: |
+          esperada="$VERSAO_GREEN"
+          if [ "$SIMULAR_FALHA" = "true" ]; then
+            echo "::warning::Falha simulada: a verificação espera uma versão que nenhuma cor serve."
+            esperada="versao-inexistente"
+          fi
+          cenarios/10-blue-green/verificar-cor.sh 8081 green "$esperada"
+      - name: Reverter o roteador para a cor blue
+        if: failure()
+        run: |
+          docker compose -f cenarios/10-blue-green/compose.yml logs green roteador
+          cenarios/10-blue-green/trocar-cor.sh blue
+          cenarios/10-blue-green/verificar-cor.sh 8081 blue "$VERSAO_BLUE"
+          echo "::warning::Reversão concluída: o roteador voltou para a cor blue e a implantação foi reprovada."
+      - name: Remover os contêineres
+        if: always()
+        run: docker compose -f cenarios/10-blue-green/compose.yml down -v
+```
+
+O passo de conferência pelo roteador troca a versão esperada por `versao-inexistente` quando `simular_falha` é verdadeira, o que faz a verificação falhar sem tocar na API. O passo com `if: failure()` executa quando qualquer passo anterior falhou. Ele mostra os *logs* e chama `trocar-cor.sh blue`. Depois confirma que o roteador voltou a responder com a cor blue e a versão anterior e emite um aviso. O *job* termina como reprovado, porque a implantação não foi concluída. O último passo roda com `if: always()` e remove contêineres e volumes com `docker compose down -v` ao fim de cada execução.
+
+### Arquivos do cenário
+
+| Arquivo | Papel |
+| --- | --- |
+| [`.github/workflows/10-blue-green.yml`](https://github.com/arkhibr/devops-fluxos-c3dm/blob/main/.github/workflows/10-blue-green.yml) | *Workflow* de troca de cor com reversão automática. |
+| [`cenarios/10-blue-green/compose.yml`](https://github.com/arkhibr/devops-fluxos-c3dm/blob/main/cenarios/10-blue-green/compose.yml) | Duas cores da API e o roteador NGINX. |
+| [`cenarios/10-blue-green/nginx.conf.tmpl`](https://github.com/arkhibr/devops-fluxos-c3dm/blob/main/cenarios/10-blue-green/nginx.conf.tmpl) | Modelo da configuração do roteador. |
+| [`cenarios/10-blue-green/trocar-cor.sh`](https://github.com/arkhibr/devops-fluxos-c3dm/blob/main/cenarios/10-blue-green/trocar-cor.sh) | *Script* que aponta o roteador para uma cor. |
+| [`cenarios/10-blue-green/verificar-cor.sh`](https://github.com/arkhibr/devops-fluxos-c3dm/blob/main/cenarios/10-blue-green/verificar-cor.sh) | *Script* que confere cor e versão com repetição. |
+| [`tests/pipelines/test_10_11_implantacao.py`](https://github.com/arkhibr/devops-fluxos-c3dm/blob/main/tests/pipelines/test_10_11_implantacao.py) | Testes estruturais dos *workflows* 10 e 11. |
 
 ## Como executar
 

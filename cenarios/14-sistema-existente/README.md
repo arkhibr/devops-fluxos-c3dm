@@ -10,7 +10,7 @@ O cenário aplica a biblioteca ao `net-minimal-api`, uma API REST em .NET 10 com
 
 Três ferramentas aparecem nos chamadores. O CodeQL analisa o código-fonte em busca de padrões de vulnerabilidade, o Gitleaks procura segredos no código e no histórico do repositório. O ZAP *baseline* é uma varredura dinâmica que consulta a aplicação em execução e aponta falhas visíveis nas respostas HTTP. Um *pull request* é a proposta de incorporar uma *branch* à `main`. As verificações dos três chamadores aparecem na página desse *pull request*, que reúne os resultados antes da decisão de incorporar o código.
 
-Os arquivos do cenário ficam no repositório do sistema e não neste. Cada chamador declara `uses:` com o endereço da biblioteca na versão `v1` e informa as entradas na chave `with`, conforme a tabela a seguir.
+Os arquivos do cenário ficam no repositório do sistema e não neste. Eles pertencem ao [*pull request* 1 do `net-minimal-api`](https://github.com/arkhibr/net-minimal-api/pull/1), da ramificação `devops/esteira-c3dm`. Essa ramificação ainda não foi incorporada à `main` daquele repositório. A decisão cabe ao dono dele, razão pela qual os *links* dos trechos apontam para a ramificação. Cada chamador declara o endereço da biblioteca na versão `v1` e informa as entradas na chave `with`, conforme a tabela a seguir.
 
 | Arquivo no sistema | Biblioteca chamada | Entradas informadas |
 | --- | --- | --- |
@@ -18,17 +18,184 @@ Os arquivos do cenário ficam no repositório do sistema e não neste. Cada cham
 | `.github/workflows/seguranca.yml` | `lib-seguranca.yml@v1` | `linguagens: '["csharp"]'` |
 | `.github/workflows/dast.yml` | `lib-dast.yml@v1` | `contexto-docker: .`, `alvo: http://localhost:8080/health`, `regras-zap: .zap/regras.tsv` |
 
-Cada chamador dispara em `pull_request` e em `push` na `main` e declara `permissions: contents: read` no nível superior. O chamador de segurança concede `security-events: write` ao job que chama a biblioteca, porque a biblioteca de segurança exige essa permissão para publicar resultados. Um *workflow* chamado nunca recebe mais permissões do que o chamador possui. Sem a concessão, o CodeQL não consegue gravar os alertas na aba de segurança do repositório. Os arquivos de apoio completam a mudança. O primeiro deles é o `Dockerfile`, que publica `ProdutosAPI.csproj` em uma imagem do ASP.NET com as variáveis `ASPNETCORE_ENVIRONMENT=Staging` e `ASPNETCORE_HTTP_PORTS=8080` e executa como o usuário `app`, sem privilégios. O ambiente `Staging` é necessário porque o `Program.cs` só ativa o redirecionamento para HTTPS em `Production`. A esteira acessa a aplicação por HTTP em `localhost`. O `.dockerignore` exclui `bin`, `obj`, o histórico e os testes do contexto de construção. O `.gitleaks.toml` registra as 5 exceções justificadas do Gitleaks e o `.zap/regras.tsv` as 3 regras do ZAP marcadas com `IGNORE`.
-
 ```mermaid
 flowchart TB
-    S["net-minimal-api"] --> A["ci.yml"]
-    S --> B["seguranca.yml"]
-    S --> C["dast.yml"]
-    A --> L1["lib-dotnet-ci.yml@v1"]
-    B --> L2["lib-seguranca.yml@v1"]
-    C --> L3["lib-dast.yml@v1"]
+    subgraph sis["Sistema net-minimal-api"]
+        A["ci.yml"]:::gatilho
+        B["seguranca.yml"]:::gatilho
+        C["dast.yml"]:::gatilho
+        CFG[("Dockerfile<br/>.gitleaks.toml<br/>.zap/regras.tsv")]:::artefato
+    end
+    subgraph lib["Biblioteca v1"]
+        L1["lib-dotnet-ci.yml"]:::etapa
+        L2["lib-seguranca.yml"]:::etapa
+        L3["lib-dast.yml"]:::etapa
+    end
+    G{"Todas as<br/>verificações passam?"}:::verificacao
+    OK["Pull request pode<br/>ser incorporado"]:::sucesso
+    X["Verificação reprovada"]:::falha
+    A --> L1
+    B --> L2
+    C --> L3
+    CFG -.-> L3
+    L1 & L2 & L3 --> G
+    G -- "sim" --> OK
+    G -- "não" --> X
+
+    classDef gatilho fill:#E8F1FB,stroke:#1F5FA8,color:#0B2545
+    classDef etapa fill:#FFFFFF,stroke:#5B6B7F,color:#1B2733
+    classDef verificacao fill:#FFF6E0,stroke:#B7791F,color:#5A3A00
+    classDef sucesso fill:#E6F4EA,stroke:#2E7D32,color:#123B17
+    classDef falha fill:#FDECEA,stroke:#C62828,color:#5B1111
+    classDef artefato fill:#F3E8FD,stroke:#6A3FB5,color:#2D1457
 ```
+
+### Chamador de CI e entradas de cobertura
+
+O chamador `ci.yml` dispara em `pull_request` e em `push` na `main` e declara `permissions: contents: read` no nível superior.
+
+Arquivo completo na ramificação do *pull request*: [`.github/workflows/ci.yml`, linhas 4 a 22](https://github.com/arkhibr/net-minimal-api/blob/devops/esteira-c3dm/.github/workflows/ci.yml#L4-L22).
+
+```yaml
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    uses: arkhibr/devops-fluxos-c3dm/.github/workflows/lib-dotnet-ci.yml@v1
+    with:
+      solucao: ProdutosAPI.ci.slnf
+      cobertura-minima: 60
+      incluir-cobertura: "[ProdutosAPI]*,[Catalogo.*]*,[Pix.*]*"
+```
+
+O grupo de *concurrency* `ci-${{ github.ref }}` com `cancel-in-progress: true` cancela a execução anterior da mesma ramificação quando chega um novo *commit*. A entrada `solucao` aponta para o filtro `ProdutosAPI.ci.slnf`, que exclui o projeto `Pedidos.Tests` por não compilar antes da adoção da esteira. A entrada `cobertura-minima: 60` fica abaixo das duas métricas globais de cobertura do sistema. A entrada `incluir-cobertura` restringe a medição aos *assemblies* da aplicação ProdutosAPI.
+
+### Chamador de segurança estática
+
+Arquivo completo na ramificação do *pull request*: [`.github/workflows/seguranca.yml`, linhas 16 a 23](https://github.com/arkhibr/net-minimal-api/blob/devops/esteira-c3dm/.github/workflows/seguranca.yml#L16-L23).
+
+```yaml
+jobs:
+  seguranca:
+    permissions:
+      contents: read
+      security-events: write
+    uses: arkhibr/devops-fluxos-c3dm/.github/workflows/lib-seguranca.yml@v1
+    with:
+      linguagens: '["csharp"]'
+```
+
+O chamador concede `security-events: write` ao *job* que chama a biblioteca, porque a biblioteca de segurança exige essa permissão para publicar resultados. Um *workflow* chamado nunca recebe mais permissões do que o chamador possui. Sem a concessão, o CodeQL não consegue gravar os alertas na aba de segurança do repositório. A entrada `linguagens` é uma lista JSON em texto, com uma única linguagem.
+
+### Chamador de segurança dinâmica
+
+Arquivo completo na ramificação do *pull request*: [`.github/workflows/dast.yml`, linhas 16 a 22](https://github.com/arkhibr/net-minimal-api/blob/devops/esteira-c3dm/.github/workflows/dast.yml#L16-L22).
+
+```yaml
+jobs:
+  dast:
+    uses: arkhibr/devops-fluxos-c3dm/.github/workflows/lib-dast.yml@v1
+    with:
+      contexto-docker: .
+      alvo: http://localhost:8080/health
+      regras-zap: .zap/regras.tsv
+```
+
+A entrada `contexto-docker: .` indica a pasta que contém o `Dockerfile`, o `alvo` é o endereço que o ZAP varre e `regras-zap` aponta para o arquivo de regras do próprio sistema.
+
+### Dockerfile
+
+O `Dockerfile` publica `ProdutosAPI.csproj` em uma imagem do ASP.NET e a biblioteca de DAST o constrói a partir do contexto informado.
+
+Arquivo completo na ramificação do *pull request*: [`Dockerfile`, linhas 1 a 18](https://github.com/arkhibr/net-minimal-api/blob/devops/esteira-c3dm/Dockerfile#L1-L18).
+
+```dockerfile
+# Imagem usada pela esteira de DAST (.github/workflows/dast.yml).
+# Ambiente Staging: o Program.cs só ativa UseHttpsRedirection em Production, e a esteira
+# acessa a aplicação por HTTP em localhost.
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+WORKDIR /src
+COPY . .
+RUN dotnet publish ProdutosAPI.csproj --configuration Release --output /app/publish
+
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
+WORKDIR /app
+ENV ASPNETCORE_ENVIRONMENT=Staging \
+    ASPNETCORE_HTTP_PORTS=8080
+COPY --from=build /app/publish .
+# O banco SQLite e os logs são gravados em /app, então o usuário sem privilégios precisa de escrita nela.
+RUN chown -R app:app /app
+USER app
+EXPOSE 8080
+ENTRYPOINT ["dotnet", "ProdutosAPI.dll"]
+```
+
+A imagem usa duas etapas, uma com o SDK para publicar e outra com o ambiente de execução. As variáveis `ASPNETCORE_ENVIRONMENT=Staging` e `ASPNETCORE_HTTP_PORTS=8080` configuram o ambiente e a porta. O ambiente `Staging` é necessário porque o `Program.cs` só ativa o redirecionamento para HTTPS em `Production` e a esteira acessa a aplicação por HTTP em `localhost`. O comando `chown` dá ao usuário `app` escrita em `/app`, onde o banco SQLite grava os dados. A instrução `USER app` executa o processo sem privilégios. O arquivo `.dockerignore` exclui `bin`, `obj`, o histórico e os testes do contexto de construção da imagem.
+
+### Exceções do Gitleaks
+
+O arquivo `.gitleaks.toml` registra exceções justificadas, cada uma por valor exato e restrita ao arquivo em que o valor aparece.
+
+Arquivo completo na ramificação do *pull request*: [`.gitleaks.toml`, linhas 7 a 28](https://github.com/arkhibr/net-minimal-api/blob/devops/esteira-c3dm/.gitleaks.toml#L7-L28).
+
+```toml
+[extend]
+useDefault = true
+# ...
+[[allowlists]]
+description = "Chave JWT de demonstração de appsettings.json"
+# valor de demonstração presente em appsettings.json e em Program.cs, não documentado no README
+condition = "AND"
+paths = ['''^appsettings\.json$''']
+regexes = ['''^MinhaChaveSuperSecretaDePeloMenos32BytesAki123!$''']
+
+[[allowlists]]
+description = "Senha de administrador de demonstração de appsettings.json"
+# valor de demonstração presente em appsettings.json e documentado no README
+condition = "AND"
+paths = ['''^appsettings\.json$''']
+regexes = ['''^senha123$''']
+```
+
+A chave `useDefault = true` mantém as regras padrão do Gitleaks. Cada exceção restringe o arquivo por caminho e informa o valor completo por expressão regular. A condição `AND` exige que as duas casem juntas, de modo que o mesmo valor em outro arquivo voltaria a ser acusado. Um comentário ao lado de cada exceção registra a justificativa de uso do valor. O arquivo traz 5 exceções no total, todas com valores de demonstração.
+
+### Regras do ZAP
+
+O arquivo `.zap/regras.tsv` marca com `IGNORE` as 3 regras do ZAP que emitiram aviso. Cada linha traz o identificador, a ação e a justificativa, separados por tabulação.
+
+Arquivo completo na ramificação do *pull request*: [`.zap/regras.tsv`, linhas 1 a 3](https://github.com/arkhibr/net-minimal-api/blob/devops/esteira-c3dm/.zap/regras.tsv#L1-L3).
+
+```tsv
+# Regras do ZAP baseline. Formato: id, ação e comentário separados por tabulação. Cada regra traz a justificativa na mesma linha.
+10021	IGNORE	(X-Content-Type-Options Header Missing) pendência de aplicação: cabeçalho a ser adicionado pela equipe em middleware, fora do escopo desta esteira
+10049	IGNORE	(Storable and Cacheable Content) pendência de aplicação: definir Cache-Control em /health, fora do escopo desta esteira
+```
+
+A biblioteca roda o ZAP com `fail_action: true` e nesse modo um aviso reprova a execução. A linha `IGNORE` faz o aviso deixar de aparecer no resultado da esteira. A correção pertence ao código da aplicação e consta no *pull request* como pendência para a equipe responsável pelo ProdutosAPI.
+
+### Arquivos do cenário
+
+| Arquivo | Papel |
+| --- | --- |
+| [`.github/workflows/ci.yml`](https://github.com/arkhibr/net-minimal-api/blob/devops/esteira-c3dm/.github/workflows/ci.yml) | Chamador de CI com cobertura. |
+| [`.github/workflows/seguranca.yml`](https://github.com/arkhibr/net-minimal-api/blob/devops/esteira-c3dm/.github/workflows/seguranca.yml) | Chamador de CodeQL e Gitleaks. |
+| [`.github/workflows/dast.yml`](https://github.com/arkhibr/net-minimal-api/blob/devops/esteira-c3dm/.github/workflows/dast.yml) | Chamador do ZAP *baseline*. |
+| [`Dockerfile`](https://github.com/arkhibr/net-minimal-api/blob/devops/esteira-c3dm/Dockerfile) | Imagem usada pela varredura dinâmica. |
+| [`.dockerignore`](https://github.com/arkhibr/net-minimal-api/blob/devops/esteira-c3dm/.dockerignore) | Exclusões do contexto de construção. |
+| [`.gitleaks.toml`](https://github.com/arkhibr/net-minimal-api/blob/devops/esteira-c3dm/.gitleaks.toml) | Exceções justificadas do Gitleaks. |
+| [`.zap/regras.tsv`](https://github.com/arkhibr/net-minimal-api/blob/devops/esteira-c3dm/.zap/regras.tsv) | Regras do ZAP marcadas com `IGNORE`. |
+| [`ProdutosAPI.ci.slnf`](https://github.com/arkhibr/net-minimal-api/blob/devops/esteira-c3dm/ProdutosAPI.ci.slnf) | Filtro de solução sem o projeto que não compila. |
+| [*Pull request* 1](https://github.com/arkhibr/net-minimal-api/pull/1) | Proposta que reúne todos os arquivos, ainda aberta. |
 
 ## Como executar
 
