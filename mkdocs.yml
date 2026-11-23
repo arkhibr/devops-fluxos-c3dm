@@ -1,0 +1,40 @@
+site_name: Fluxos de CI/CD pelo modelo C3DM
+site_description: Roteiro executável de práticas de CI/CD e DevOps, organizado pelos níveis do modelo de maturidade C3DM.
+site_url: https://arkhibr.github.io/devops-fluxos-c3dm/
+repo_url: https://github.com/arkhibr/devops-fluxos-c3dm
+repo_name: arkhibr/devops-fluxos-c3dm
+
+exclude_docs: |
+  superpowers/
+
+theme:
+  name: material
+  language: pt-BR
+
+plugins:
+  - search
+  - include-markdown
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - tables
+  - toc:
+      permalink: true
+
+nav:
+  - Início: index.md
+  - Trilha de adoção: trilha.md
+  - Autoavaliação: autoavaliacao.md
+  - Cenários:
+      - cenarios/index.md
+  - Referência:
+      - Glossário: referencia/glossario.md
+      - Métricas: referencia/metricas.md
+      - Ferramentas: referencia/ferramentas.md
+      - Bibliografia: referencia/bibliografia.md
