@@ -5,11 +5,15 @@ on:
     paths:
       - apps/api/**
       - .github/workflows/03-api.yml
+      - .github/workflows/lib-dotnet-ci.yml
+      - .github/actions/resumo-falha/**
   push:
     branches: [main]
     paths:
       - apps/api/**
       - .github/workflows/03-api.yml
+      - .github/workflows/lib-dotnet-ci.yml
+      - .github/actions/resumo-falha/**
 
 permissions:
   contents: read

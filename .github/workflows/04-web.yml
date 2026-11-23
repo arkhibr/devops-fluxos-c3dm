@@ -5,11 +5,15 @@ on:
     paths:
       - apps/web/**
       - .github/workflows/04-web.yml
+      - .github/workflows/lib-web-ci.yml
+      - .github/actions/resumo-falha/**
   push:
     branches: [main]
     paths:
       - apps/web/**
       - .github/workflows/04-web.yml
+      - .github/workflows/lib-web-ci.yml
+      - .github/actions/resumo-falha/**
 
 permissions:
   contents: read

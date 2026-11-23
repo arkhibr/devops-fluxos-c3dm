@@ -22,9 +22,15 @@ on:
         type: string
         required: true
       regras-zap:
-        description: Caminho do arquivo de regras do ZAP no repositório chamador. Vazio roda sem arquivo de regras.
+        description: >-
+          Caminho do arquivo de regras do ZAP no repositório chamador. Vazio roda sem arquivo de regras.
+          Se o caminho informado não existir, o job emite um aviso e roda sem regras.
         type: string
         default: ''
+      nome-artefato:
+        description: Nome do artefato com o relatório do ZAP publicado pela execução.
+        type: string
+        default: zap-api
 
 permissions:
   contents: read
@@ -57,14 +63,25 @@ jobs:
           echo "::error::A aplicação não ficou saudável em 60 segundos. Logs do contêiner:"
           docker logs app-dast
           exit 1
+      - name: Verificar o arquivo de regras do ZAP
+        id: regras
+        env:
+          REGRAS: ${{ inputs.regras-zap }}
+        run: |
+          if [ -n "$REGRAS" ] && [ ! -f "$REGRAS" ]; then
+            echo "::warning::Arquivo de regras '$REGRAS' ausente. O ZAP roda sem regras."
+            echo "arquivo=" >> "$GITHUB_OUTPUT"
+          else
+            echo "arquivo=$REGRAS" >> "$GITHUB_OUTPUT"
+          fi
       - name: ZAP baseline contra a aplicação em execução
         uses: zaproxy/action-baseline@de8ad967d3548d44ef623df22cf95c3b0baf8b25  # v0.15.0
         with:
           target: ${{ inputs.alvo }}
-          rules_file_name: ${{ inputs.regras-zap }}
+          rules_file_name: ${{ steps.regras.outputs.arquivo }}
           fail_action: true
           allow_issue_writing: false
-          artifact_name: zap-api
+          artifact_name: ${{ inputs.nome-artefato }}
       - name: Resumir a falha
         if: ${{ failure() }}
         uses: arkhibr/devops-fluxos-c3dm/.github/actions/resumo-falha@v1

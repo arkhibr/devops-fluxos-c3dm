@@ -6,7 +6,10 @@ on:
   workflow_call:
     inputs:
       diretorio:
-        description: Pasta da aplicação, a partir da raiz do repositório chamador, que contém o package.json.
+        description: >-
+          Pasta da aplicação, a partir da raiz do repositório chamador, que contém o package.json
+          com os scripts lint, typecheck, test e build. Os limites de cobertura vêm da configuração
+          do vitest do chamador.
         type: string
         required: true
       node-version:
@@ -36,7 +39,7 @@ jobs:
         run: npm run lint
       - name: Verificar tipos com o TypeScript
         run: npm run typecheck
-      - name: Testar com cobertura mínima de 80%
+      - name: Testar com os limites de cobertura do projeto
         run: npm test
       - name: Compilar para produção
         run: npm run build

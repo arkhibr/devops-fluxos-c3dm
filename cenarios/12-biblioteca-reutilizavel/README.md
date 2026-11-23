@@ -15,7 +15,7 @@ Os arquivos da biblioteca ficam em `.github/workflows/` com o prefixo `lib-`, en
 | `lib-dotnet-ci.yml` | `solucao` (obrigatória), `dotnet-version` (`10.0.x`), `cobertura-minima` (`80`), `diretorio` (`.`), `incluir-cobertura` (vazia) | `integracao` |
 | `lib-web-ci.yml` | `diretorio` (obrigatória), `node-version` (`24`) | `integracao` |
 | `lib-seguranca.yml` | `linguagens` (obrigatória, lista JSON), `config-gitleaks` (`.gitleaks.toml`), `config-codeql` (vazia) | `codeql` e `segredos` |
-| `lib-dast.yml` | `contexto-docker` e `alvo` (obrigatórias), `porta` (`8080`), `caminho-health` (`/health`), `regras-zap` (vazia) | `zap` |
+| `lib-dast.yml` | `contexto-docker` e `alvo` (obrigatórias), `porta` (`8080`), `caminho-health` (`/health`), `regras-zap` (vazia), `nome-artefato` (`zap-api`) | `zap` |
 
 Os cenários 03, 04, 06 e 07 deixaram de conter passos próprios nesses trechos. Cada um tem agora um job que declara `uses: ./.github/workflows/lib-*.yml` e informa as entradas na chave `with`. A referência começa por `./` porque o chamador e a biblioteca estão no mesmo repositório, de modo que a versão chamada é a do próprio *commit*. Os jobs que provam a falha esperada, como `fixtures-devem-reprovar` e `fixture-deve-reprovar`, continuam nos cenários. Eles descrevem o experimento didático e não a prática reutilizável. Os nomes `ci-api` e `ci-web` permanecem distintos das verificações obrigatórias `pytest`, `actionlint`, `build` e `titulo`. O contexto exibido no *pull request* passa a ter a forma `ci-api / integracao`, composta pelo nome do job chamador e pelo nome do job da biblioteca.
 
@@ -43,11 +43,11 @@ A biblioteca usa também condicionais e expressões dinâmicas em vários pontos
 
 A biblioteca também trata a ausência de arquivos do chamador. O Gitleaks usa `--config` somente quando o arquivo informado existe e aplica as regras padrão no caso contrário. O CodeQL e o ZAP recebem o caminho de configuração como entrada, de modo que o valor vazio faz a ferramenta rodar sem arquivo de configuração. O teste `test_lib_nao_depende_de_arquivos_deste_repositorio` garante que nenhum caminho de `apps/`, `.zap/` ou `cenarios/` aparece nos arquivos da biblioteca.
 
-A espera pelo *health* da aplicação em `lib-dast.yml` tem limite de 60 tentativas, com um segundo entre elas. Ao esgotá-las, o passo imprime os registros do contêiner com `docker logs` e falha.
+A espera pelo *health* da aplicação em `lib-dast.yml` tem limite de 60 tentativas, com um segundo entre elas. Ao esgotá-las, o passo imprime os registros do contêiner com `docker logs` e falha. Quando `regras-zap` aponta para um arquivo inexistente, o job emite um `::warning::` e roda o ZAP sem regras. O mesmo aviso vale para a configuração do Gitleaks que esteja ausente no repositório chamador.
 
 ### Uso a partir de outro repositório
 
-O *workflow* reutilizável executa `actions/checkout` sem o parâmetro `repository`, de modo que o repositório baixado é sempre o do chamador. A *composite action* é chamada com o endereço completo `arkhibr/devops-fluxos-c3dm/.github/actions/resumo-falha@v1`. Um caminho local como `./.github/actions/resumo-falha` seria procurado no repositório chamador, onde o arquivo não existe. As demais *actions* continuam fixadas por SHA. O teste estrutural de fixação cobre também os `uses:` dentro de `action.yml`, o que estende a regra às *composite actions* do repositório. A referência `@v1` aos arquivos da própria biblioteca é a única exceção à regra de SHA.
+O *workflow* reutilizável executa `actions/checkout` sem o parâmetro `repository`, de modo que o repositório baixado é sempre o do chamador. A *composite action* é chamada com o endereço completo `arkhibr/devops-fluxos-c3dm/.github/actions/resumo-falha@v1`. Um caminho local como `./.github/actions/resumo-falha` seria procurado no repositório chamador, onde o arquivo não existe. As demais *actions* continuam fixadas por SHA. O teste estrutural de fixação cobre também os `uses:` dentro de `action.yml`, o que estende a regra às *composite actions* do repositório. A referência `@v1` à *composite action* dentro da biblioteca é a única exceção à regra de SHA. Uma correção nela só chega aos chamadores externos depois que a *tag* `v1` avança para o *commit* que a contém.
 
 O chamador mínimo de um repositório externo para a CI de uma API .NET é este:
 
@@ -65,7 +65,7 @@ jobs:
       diretorio: src
 ```
 
-Os demais chamadores seguem o mesmo formato. Os endereços são `arkhibr/devops-fluxos-c3dm/.github/workflows/lib-web-ci.yml@v1`, `arkhibr/devops-fluxos-c3dm/.github/workflows/lib-seguranca.yml@v1` e `arkhibr/devops-fluxos-c3dm/.github/workflows/lib-dast.yml@v1`. Quem chama `lib-seguranca.yml` precisa conceder `security-events: write` ao job chamador, pois um *workflow* chamado nunca recebe mais permissões do que o chamador possui, ao contrário do que a ausência dessa linha poderia sugerir.
+Os demais chamadores seguem o mesmo formato, com as exigências descritas a seguir para cada biblioteca. A `lib-dotnet-ci.yml` exige que cada projeto de testes do chamador referencie o pacote `coverlet.collector`. Com a entrada `incluir-cobertura` vazia, a medição abrange todos os assemblies carregados, inclusive os de terceiros. A `lib-web-ci.yml` supõe que o `package.json` do chamador tenha os scripts `lint`, `typecheck`, `test` e `build`. Os limites de cobertura dessa biblioteca são os que a configuração do vitest do chamador define para o projeto dele. Os endereços são `arkhibr/devops-fluxos-c3dm/.github/workflows/lib-web-ci.yml@v1`, `arkhibr/devops-fluxos-c3dm/.github/workflows/lib-seguranca.yml@v1` e `arkhibr/devops-fluxos-c3dm/.github/workflows/lib-dast.yml@v1`. Quem chama `lib-seguranca.yml` precisa conceder `security-events: write` ao job chamador, pois um *workflow* chamado nunca recebe mais permissões do que o chamador possui. Em repositório privado o job também precisa de `actions: read` para o CodeQL consultar a execução.
 
 ### Versão v1
 

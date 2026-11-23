@@ -7,6 +7,8 @@ on:
       - .zap/**
       - cenarios/07-seguranca-dinamica/**
       - .github/workflows/07-dast.yml
+      - .github/workflows/lib-dast.yml
+      - .github/actions/resumo-falha/**
   push:
     branches: [main]
     paths:
@@ -14,6 +16,8 @@ on:
       - .zap/**
       - cenarios/07-seguranca-dinamica/**
       - .github/workflows/07-dast.yml
+      - .github/workflows/lib-dast.yml
+      - .github/actions/resumo-falha/**
 
 permissions:
   contents: read

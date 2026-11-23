@@ -41,7 +41,7 @@ def test_07_fail_action():
     zap = _passo_zap("zap", LIB)
     assert re.match(r"^zaproxy/action-baseline@[0-9a-f]{40}$", zap["uses"])
     assert zap["with"]["target"] == "${{ inputs.alvo }}"
-    assert zap["with"]["rules_file_name"] == "${{ inputs.regras-zap }}"
+    assert zap["with"]["rules_file_name"] == "${{ steps.regras.outputs.arquivo }}"
     assert zap["with"]["fail_action"] is True
     assert zap["with"]["allow_issue_writing"] is False
     assert "continue-on-error" not in zap

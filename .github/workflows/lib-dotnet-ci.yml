@@ -14,7 +14,10 @@ on:
         type: string
         default: 10.0.x
       cobertura-minima:
-        description: Percentual mínimo de cobertura de linhas. Abaixo dele o job falha.
+        description: >-
+          Percentual mínimo de cobertura de linhas. Abaixo dele o job falha. O limite superior do
+          indicador verde é o maior valor entre este e 90. Cada projeto de testes do chamador precisa
+          referenciar o pacote coverlet.collector.
         type: number
         default: 80
       diretorio:
@@ -22,7 +25,9 @@ on:
         type: string
         default: .
       incluir-cobertura:
-        description: Filtro de assemblies da cobertura, por exemplo [Api]*. Vazio mede todos os projetos.
+        description: >-
+          Filtro de assemblies da cobertura, por exemplo [Api]*. Vazio mede todos os assemblies
+          carregados nos testes, inclusive bibliotecas de terceiros e os próprios projetos de teste.
         type: string
         default: ''
 
@@ -54,11 +59,13 @@ jobs:
       - name: Resumir cobertura e reprovar abaixo do mínimo
         uses: irongut/CodeCoverageSummary@51cc3a756ddcd398d447c044c02cb6aa83fdae95  # v1.3.0
         with:
-          filename: ${{ inputs.diretorio }}/**/TestResults/**/coverage.cobertura.xml
+          filename: >-
+            ${{ inputs.diretorio == '.' && '**/TestResults/**/coverage.cobertura.xml'
+            || format('{0}/**/TestResults/**/coverage.cobertura.xml', inputs.diretorio) }}
           format: markdown
           output: both
           indicators: true
-          thresholds: ${{ inputs.cobertura-minima }} 90
+          thresholds: ${{ inputs.cobertura-minima }} ${{ inputs.cobertura-minima > 90 && inputs.cobertura-minima || 90 }}
           fail_below_min: true
       - name: Publicar resumo no job summary
         if: ${{ !cancelled() }}
