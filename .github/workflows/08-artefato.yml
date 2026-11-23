@@ -30,7 +30,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: 08-artefato-${{ github.ref }}
+  group: ${{ github.event_name == 'workflow_dispatch' && format('promocao-{0}', inputs.ambiente) || format('08-artefato-{0}', github.ref) }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:

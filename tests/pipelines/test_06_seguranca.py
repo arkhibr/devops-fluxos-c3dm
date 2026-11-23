@@ -18,13 +18,19 @@ def _passo(job: str, id_: str) -> dict:
 def test_gitleaks_ignora_somente_fixtures():
     config = tomllib.loads((RAIZ / ".gitleaks.toml").read_text(encoding="utf-8"))
     assert config["extend"]["useDefault"] is True
-    listas = config["allowlists"]
-    assert listas[0]["paths"] == [f"^{FIXTURES}/"]
-    assert not {"regexes", "commits", "stopwords"} & set(listas[0])
-    # Demais exceções só podem ser por commit do histórico, nunca por caminho ou regex.
-    for extra in listas[1:]:
-        assert set(extra) == {"description", "commits"}
-        assert extra["description"].strip()
+    assert config["allowlists"] == [
+        {
+            "description": "Fixtures do cenário 06, que devem ser reprovados pela varredura de segredos",
+            "paths": [f"^{FIXTURES}/"],
+        },
+        {
+            "description": "Falso positivo: nome da imagem no teste do cenário 08",
+            "condition": "AND",
+            "targetRules": ["generic-api-key"],
+            "paths": [r"^tests/pipelines/test_08_artefato\.py$"],
+            "regexes": ["devops-fluxos-c3dm-(api|web)"],
+        },
+    ]
 
 
 def test_fixtures_verificam_outcome():

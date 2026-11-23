@@ -1,6 +1,6 @@
-# Configuração do Gitleaks do repositório. Estende as regras padrão e ignora
-# a pasta de fixtures do cenário 06, que contém um segredo falso de propósito, e um
-# commit do histórico em que o nome da imagem `...-api` num teste foi lido como chave de API.
+# Configuração do Gitleaks do repositório. Estende as regras padrão e define duas
+# exceções restritas: a pasta de fixtures do cenário 06, que contém um segredo falso
+# de propósito, e o nome da imagem de contêiner num teste do cenário 08.
 [extend]
 useDefault = true
 
@@ -9,5 +9,8 @@ description = "Fixtures do cenário 06, que devem ser reprovados pela varredura 
 paths = ['''^cenarios/06-seguranca-estatica/fixtures/''']
 
 [[allowlists]]
-description = "Falso positivo no histórico: nome de imagem de contêiner lido como generic-api-key em um teste do cenário 08"
-commits = ["c4ade355e99993d41d040f2862fa2fc8a7a6d252"]
+description = "Falso positivo: nome da imagem no teste do cenário 08"
+condition = "AND"
+targetRules = ["generic-api-key"]
+paths = ['''^tests/pipelines/test_08_artefato\.py$''']
+regexes = ['''devops-fluxos-c3dm-(api|web)''']
