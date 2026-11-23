@@ -38,6 +38,7 @@ nav:
       - 03 CI da API .NET: cenarios/03.md
       - 04 CI da aplicação React: cenarios/04.md
       - 05 Teste da esteira: cenarios/05.md
+      - 06 Segurança estática: cenarios/06.md
   - Referência:
       - Glossário: referencia/glossario.md
       - Métricas: referencia/metricas.md

@@ -1,0 +1,8 @@
+# Configuração do Gitleaks do repositório. Estende as regras padrão e ignora
+# somente a pasta de fixtures do cenário 06, que contém um segredo falso de propósito.
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Fixtures do cenário 06, que devem ser reprovados pela varredura de segredos"
+paths = ['''cenarios/06-seguranca-estatica/fixtures/''']

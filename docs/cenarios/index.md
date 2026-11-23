@@ -15,7 +15,7 @@ Novato:
 
 Intermediário:
 
-- 06 Análise estática, análise de dependências e varredura de segredos
+- [06 Análise estática, análise de dependências e varredura de segredos](06.md)
 - 07 Análise dinâmica de segurança com OWASP ZAP
 - 08 Artefato único em imagem de contêiner promovida sem recompilação
 - 09 Ambientes de homologação e produção
