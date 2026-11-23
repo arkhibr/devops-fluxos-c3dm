@@ -1,0 +1,51 @@
+[
+  {
+    "id": 1,
+    "sha": "aaa1111",
+    "environment": "producao",
+    "created_at": "2026-11-01T12:00:00Z",
+    "estado": "success"
+  },
+  {
+    "id": 2,
+    "sha": "hom2222",
+    "environment": "homologacao",
+    "created_at": "2026-11-02T09:00:00Z",
+    "estado": "success"
+  },
+  {
+    "id": 3,
+    "sha": "bbb3333",
+    "environment": "producao",
+    "created_at": "2026-11-03T15:00:00Z",
+    "estado": "success"
+  },
+  {
+    "id": 4,
+    "sha": "ccc4444",
+    "environment": "producao",
+    "created_at": "2026-11-05T10:00:00Z",
+    "estado": "failure"
+  },
+  {
+    "id": 5,
+    "sha": "ddd5555",
+    "environment": "producao",
+    "created_at": "2026-11-07T09:00:00Z",
+    "estado": "success"
+  },
+  {
+    "id": 6,
+    "sha": "eee6666",
+    "environment": "producao",
+    "created_at": "2026-11-08T10:00:00Z",
+    "estado": "success"
+  },
+  {
+    "id": 7,
+    "sha": "fff7777",
+    "environment": "producao",
+    "created_at": "2026-11-10T16:00:00Z",
+    "estado": "success"
+  }
+]

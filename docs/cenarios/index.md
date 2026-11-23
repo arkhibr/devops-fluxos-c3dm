@@ -25,7 +25,7 @@ Avançado:
 - [10 Implantação *blue-green* com reversão automática](10.md)
 - [11 Implantação canário com análise de proporção e de erros](11.md)
 - 12 Biblioteca de *workflows* reutilizáveis e *composite actions*
-- 13 Métricas DORA e métricas de esteira
+- [13 Métricas DORA e métricas de esteira pela API do GitHub](13.md)
 
 Especialista:
 

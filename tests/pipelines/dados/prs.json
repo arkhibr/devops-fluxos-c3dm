@@ -1,0 +1,32 @@
+[
+  {
+    "number": 1,
+    "merge_commit_sha": "aaa1111",
+    "merged_at": "2026-11-01T11:30:00Z",
+    "primeiro_commit": "2026-10-30T11:00:00Z"
+  },
+  {
+    "number": 2,
+    "merge_commit_sha": "bbb3333",
+    "merged_at": "2026-11-03T14:00:00Z",
+    "primeiro_commit": "2026-11-02T14:00:00Z"
+  },
+  {
+    "number": 3,
+    "merge_commit_sha": "ddd5555",
+    "merged_at": "2026-11-07T08:00:00Z",
+    "primeiro_commit": "2026-11-06T20:00:00Z"
+  },
+  {
+    "number": 4,
+    "merge_commit_sha": "ccc4444",
+    "merged_at": "2026-11-05T09:30:00Z",
+    "primeiro_commit": "2026-11-05T08:00:00Z"
+  },
+  {
+    "number": 5,
+    "merge_commit_sha": null,
+    "merged_at": null,
+    "primeiro_commit": "2026-11-09T08:00:00Z"
+  }
+]

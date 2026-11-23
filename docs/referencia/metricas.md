@@ -8,10 +8,10 @@ As quatro métricas medem a velocidade e a estabilidade da entrega. As duas prim
 
 | Métrica | Pergunta que responde | Como se mede |
 | --- | --- | --- |
-| Frequência de implantação | Com que frequência a organização libera mudanças em produção com êxito? | Contagem de implantações bem-sucedidas em produção por período. |
-| Prazo de entrega de mudanças | Quanto tempo uma mudança leva do *commit* até a produção? | Intervalo entre o primeiro *commit* de uma mudança e a sua implantação em produção, resumido pela mediana, o valor central de uma série ordenada de medições, menos sensível a casos extremos que a média. |
-| Taxa de falha de mudanças | Qual a proporção de implantações que causam falha em produção? | Implantações que exigiram correção, reversão ou resposta a incidente divididas pelo total de implantações. |
-| Tempo de recuperação de implantação com falha | Quanto tempo a organização leva para se recuperar de uma falha em produção? | Intervalo entre a abertura de um incidente e a restauração do serviço, resumido pela mediana. Edições anteriores do relatório e o material didático usam o nome tempo para restaurar o serviço, ou MTTR. |
+| Frequência de implantação | Com que frequência a organização libera mudanças em produção com êxito? | Implantações de produção com estado de êxito divididas pelos dias da janela. O estado vem do último status terminal de cada registro de *deployment* na API do GitHub. |
+| Prazo de entrega de mudanças | Quanto tempo uma mudança leva do *commit* até a produção? | Intervalo entre o primeiro *commit* de um *pull request* e o primeiro *deployment* de produção bem-sucedido criado depois do seu *merge*, resumido pela mediana, o valor central de uma série ordenada de medições, menos sensível a casos extremos que a média. |
+| Taxa de falha de mudanças | Qual a proporção de implantações que causam falha em produção? | Implantações de produção com status de falha ou seguidas de uma *issue* com o rótulo `incidente`, aberta antes da implantação seguinte, divididas pelo total de implantações concluídas. |
+| Tempo de recuperação de implantação com falha | Quanto tempo a organização leva para se recuperar de uma falha em produção? | Intervalo entre a abertura e o fechamento de uma *issue* com o rótulo `incidente`, resumido pela mediana. Edições anteriores do relatório e o material didático usam o nome tempo para restaurar o serviço, ou MTTR. |
 
 Os nomes seguem a edição de 2024 do relatório, que passou a chamar a quarta métrica de tempo de recuperação de implantação com falha. A edição de 2024 também discute a taxa de retrabalho, que o roteiro não calcula. A coluna de medição indica a forma de cálculo adotada pelo cenário 13, que pode diferir da definição de edições do relatório. Cada métrica só tem sentido quando lida junto das outras. Aumentar a frequência de implantação sem acompanhar a taxa de falha, por exemplo, pode significar que a equipe libera mais mudanças defeituosas.
 
