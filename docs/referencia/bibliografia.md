@@ -14,7 +14,7 @@ Esta página lista as obras que fundamentam o roteiro. As duas primeiras são li
 
 | Referência | Uso no portal |
 | --- | --- |
-| DORA. *Accelerate State of DevOps Report 2024*. Google Cloud, 2024. https://dora.dev/research/2024/ | Referência atual para as métricas de entrega e para a relação entre capacidades técnicas e desempenho. |
+| DORA. *Accelerate State of DevOps Report 2024*. Google Cloud, 2024. https://dora.dev/research/2024/ | Edição de 2024 do relatório, na qual se baseia o texto da página de métricas. O conteúdo não foi conferido contra edições posteriores. |
 
 ## Artigos sobre adoção de DevOps e fatores críticos de sucesso
 

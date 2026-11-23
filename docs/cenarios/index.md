@@ -1,6 +1,6 @@
 # Cenários
 
-Cada cenário do roteiro tem uma página própria neste portal, produzida a partir do arquivo `README.md` da pasta correspondente em `cenarios/`, de modo que o texto exista em uma única cópia. Os quatorze cenários previstos estão listados abaixo, com o nível do C3DM em que se enquadram.
+Cada cenário do roteiro tem uma página própria neste portal, produzida a partir do arquivo `README.md` da pasta correspondente em `cenarios/`, de modo que o texto exista em uma única cópia. Os quatorze cenários estão listados abaixo, agrupados pelo nível do C3DM que este repositório atribui a cada um. A esteira mencionada nos títulos é a sequência automatizada de compilação, teste e implantação do repositório.
 
 Fundacional:
 

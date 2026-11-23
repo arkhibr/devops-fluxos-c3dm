@@ -1,6 +1,6 @@
 # Catálogo e comparação de ferramentas
 
-Esta página reúne as ferramentas empregadas nos cenários e compara três plataformas de integração e entrega contínuas. O roteiro usa o GitHub Actions por estar integrado ao repositório que hospeda o material. Nenhuma sintaxe específica é condição das práticas descritas, que dependem dos conceitos de esteira, de estágio e de artefato e por isso se transferem para as outras plataformas comparadas adiante.
+Esta página reúne as ferramentas empregadas nos cenários e compara três plataformas de *CI/CD*, sigla que designa a integração e a entrega contínuas. A esteira é a sequência automatizada de compilação, teste e implantação que todas elas executam. O roteiro usa o GitHub Actions por estar integrado ao repositório que hospeda o material. As práticas descritas dependem dos conceitos de esteira, de estágio e de artefato. Por isso as práticas se transferem para as outras plataformas comparadas adiante, desde que elas ofereçam esses conceitos.
 
 ## Ferramentas usadas nos cenários
 
@@ -60,4 +60,4 @@ A comparação segue as capacidades acima e descreve o que cada produto oferece 
 
 ## Critérios de escolha
 
-A escolha entre plataformas depende menos da lista de recursos do que de três fatores. O primeiro é onde o código já está hospedado, porque a integração nativa com o repositório elimina configuração. O segundo é o regime de conformidade da organização, que pode exigir aprovações, trilhas de auditoria e execução em infraestrutura própria. O terceiro é o custo de execução, medido pela métrica de custo mensal das esteiras descrita na página de [métricas](metricas.md).
+A escolha entre plataformas depende de três fatores além da lista de recursos. O primeiro é onde o código já está hospedado, porque a integração nativa com o repositório elimina configuração. O segundo é o regime de conformidade da organização, que pode exigir aprovações, trilhas de auditoria e execução em infraestrutura própria. O terceiro é o custo de execução, medido pela métrica de custo mensal das esteiras descrita na página de [métricas](metricas.md).

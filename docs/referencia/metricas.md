@@ -1,6 +1,6 @@
 # Métricas de entrega e de esteira
 
-Medir a entrega permite saber se uma prática de *CI/CD* melhora o resultado ou apenas acrescenta etapas. Esta página descreve dois grupos de métricas. O primeiro reúne as quatro métricas do *DORA*, sigla de *DevOps Research and Assessment*, programa de pesquisa que as definiu a partir de levantamentos anuais com profissionais de tecnologia. O segundo reúne métricas operacionais da própria esteira, que ajudam a localizar desperdício e gargalos. O cenário 13 do roteiro calcula as métricas do primeiro grupo a partir da API do GitHub.
+Medir a entrega permite verificar se uma prática de *CI/CD* altera o resultado da equipe. A sigla designa a integração e a entrega contínuas. A esteira é a sequência automatizada de compilação, teste e implantação. Ela também é objeto de medição, como mostram as métricas operacionais descritas adiante. Esta página descreve dois grupos de métricas. O primeiro reúne as quatro métricas do *DORA*, programa de pesquisa chamado *DevOps Research and Assessment* que as definiu a partir de levantamentos anuais com profissionais de tecnologia. O segundo reúne métricas operacionais da esteira que ajudam a localizar desperdício e gargalos. O texto segue a edição de 2024 do relatório *Accelerate State of DevOps* e das fontes didáticas do roteiro. Ele não foi conferido contra edições posteriores, nas quais nomes e definições das métricas podem ter mudado. O cenário 13 do roteiro calcula as métricas do primeiro grupo a partir da API do GitHub.
 
 ## Métricas DORA
 
@@ -9,11 +9,11 @@ As quatro métricas medem a velocidade e a estabilidade da entrega. As duas prim
 | Métrica | Pergunta que responde | Como se mede |
 | --- | --- | --- |
 | Frequência de implantação | Com que frequência a organização libera mudanças em produção com êxito? | Contagem de implantações bem-sucedidas em produção por período. |
-| Prazo de entrega de mudanças | Quanto tempo uma mudança leva do *commit* até a produção? | Intervalo entre o primeiro *commit* de uma mudança e a sua implantação em produção, resumido pela mediana. |
-| Taxa de falha de mudanças | Qual a proporção de implantações que causam falha em produção? | Implantações que exigiram correção, reversão ou resposta a incidente divididas pelo total de implantações. |
-| Tempo para restaurar o serviço | Quanto tempo a organização leva para se recuperar de uma falha em produção? | Intervalo entre a abertura de um incidente e a restauração do serviço, resumido pela mediana. |
+| Tempo de entrega para mudanças | Quanto tempo uma mudança leva do *commit* até a produção? | Intervalo entre o primeiro *commit* de uma mudança e a sua implantação em produção, resumido pela mediana, o valor central de uma série ordenada de medições, menos sensível a casos extremos que a média. |
+| Taxa de falha de alteração | Qual a proporção de implantações que causam falha em produção? | Implantações que exigiram correção, reversão ou resposta a incidente divididas pelo total de implantações. |
+| Tempo para restaurar o serviço (MTTR) | Quanto tempo a organização leva para se recuperar de uma falha em produção? | Intervalo entre a abertura de um incidente e a restauração do serviço, resumido pela mediana. |
 
-Cada métrica só tem sentido quando lida junto das outras. Aumentar a frequência de implantação sem acompanhar a taxa de falha, por exemplo, pode indicar apenas que a equipe libera mais mudanças defeituosas.
+Os nomes seguem o material didático do roteiro. A coluna de medição indica a forma de cálculo adotada pelo cenário 13, que pode diferir da definição de edições do relatório. Cada métrica só tem sentido quando lida junto das outras. Aumentar a frequência de implantação sem acompanhar a taxa de falha, por exemplo, pode significar que a equipe libera mais mudanças defeituosas.
 
 ## Métricas operacionais da esteira
 
@@ -30,4 +30,4 @@ As métricas abaixo descrevem a saúde da esteira como sistema de produção. El
 
 ## Uso das métricas
 
-As métricas devem orientar decisões de melhoria e nunca servir como meta individual, porque uma meta atribuída a pessoas incentiva o ajuste do número em vez da melhoria do processo. Recomenda-se registrar a medição inicial antes de adotar uma prática nova e repeti-la depois, o que permite comparar o resultado com a situação anterior. A página [Autoavaliação](../autoavaliacao.md) usa o mesmo raciocínio para os domínios do modelo C3DM.
+As métricas devem orientar decisões de melhoria e nunca servir como meta individual, porque uma meta atribuída a pessoas incentiva o ajuste do número e deixa o processo como estava. Recomenda-se registrar a medição inicial antes de adotar uma prática nova e repeti-la depois, o que permite comparar o resultado com a situação anterior. A página [Autoavaliação](../autoavaliacao.md) usa o mesmo raciocínio para os domínios do modelo C3DM.

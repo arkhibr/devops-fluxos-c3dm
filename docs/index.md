@@ -1,6 +1,6 @@
 # Fluxos de CI/CD pelo modelo C3DM
 
-Este portal documenta um roteiro executável de práticas de *CI/CD*, sigla de integração contínua e entrega contínua. O roteiro também cobre *DevOps*, a abordagem em que desenvolvimento e operação compartilham a responsabilidade pela entrega de software. O repositório que o acompanha contém uma aplicação de exemplo com API e interface web. Cada cenário acrescenta a essa aplicação uma prática de esteira descrita em um *workflow* do GitHub Actions, que é um fluxo de automação escrito em YAML e executado pelo próprio GitHub a cada evento do repositório.
+Este portal documenta um roteiro executável de práticas de *CI/CD*, sigla de integração contínua e entrega contínua. O roteiro também cobre *DevOps*, a abordagem em que desenvolvimento e operação compartilham a responsabilidade pela entrega de software. O repositório que o acompanha contém uma aplicação de exemplo com API e interface web. Cada cenário acrescenta a essa aplicação uma prática de esteira, que é a sequência automatizada de compilação, teste e implantação. A prática é descrita em um *workflow* do GitHub Actions, um fluxo de automação escrito em YAML que o próprio GitHub executa a cada evento do repositório.
 
 ## Objetivo
 
@@ -14,7 +14,7 @@ O material se destina a equipes de desenvolvimento que adotam ou pretendem adota
 - Docker.
 - .NET 10 SDK, para a API.
 - Node 24, para a interface web.
-- Python 3.12, para os testes da própria esteira e para o portal.
+- Python 3.13, para os testes da própria esteira e para o portal.
 
 Nenhum cenário depende de conta em provedor de nuvem nem de segredo criado fora do script de configuração do próprio cenário.
 
@@ -32,7 +32,7 @@ Todo cenário segue a mesma estrutura de cinco seções.
 
 ## Mapa dos cenários
 
-A tabela relaciona os quatorze cenários ao nível do C3DM em que cada um se enquadra. As páginas individuais ficam na seção [Cenários](cenarios/index.md) conforme forem publicadas.
+A tabela relaciona os quatorze cenários ao nível do C3DM em que cada um se enquadra. As páginas individuais de cada cenário ficam na seção [Cenários](cenarios/index.md) do portal. O nível de cada cenário é uma escolha deste repositório. A página [Trilha de adoção](trilha.md) explica como essa escolha se relaciona com os níveis que o modelo define para cada domínio.
 
 | Nº | Cenário | Nível |
 | --- | --- | --- |

@@ -1,6 +1,6 @@
 # Autoavaliação de maturidade por domínio
 
-Esta página permite que uma equipe situe um sistema em cada um dos cinco domínios do modelo C3DM, descrito na página [Trilha de adoção](trilha.md). Para cada domínio, uma tabela apresenta os cinco níveis com uma evidência observável. Evidência observável é algo que a equipe consegue verificar no repositório, na esteira ou nos registros de implantação sem depender de opinião. Como cada nível pressupõe as evidências dos anteriores, o nível de um domínio é o mais alto cujas evidências estão todas presentes.
+Esta página permite que uma equipe situe um sistema em cada um dos cinco domínios do modelo C3DM, descrito na página [Trilha de adoção](trilha.md). Para cada domínio, uma tabela apresenta os cinco níveis com uma evidência observável. Evidência observável é algo que a equipe consegue verificar sem depender de opinião. Pode ser um arquivo do repositório, o histórico da esteira ou um registro de implantação. A esteira é a sequência automatizada de compilação, teste e implantação. Como cada nível pressupõe as evidências dos anteriores, o nível de um domínio é o mais alto cujas evidências estão todas presentes.
 
 ## Como aplicar
 
@@ -58,14 +58,17 @@ A avaliação funciona melhor com duas ou três pessoas que conheçam o sistema,
 
 ## Cenários recomendados para subir um nível
 
-A tabela indica, para cada domínio, os cenários do repositório que trabalham a prática característica do nível seguinte. Onde a célula informa que não há cenário, o repositório não traz uma prática dedicada. Nesse caso a equipe deve recorrer às referências da página [Bibliografia](referencia/bibliografia.md).
+O repositório atribui um único nível a cada cenário. Esse agrupamento é uma escolha do roteiro, explicada na página [Trilha de adoção](trilha.md). A tabela coloca cada cenário uma só vez, na coluna do nível do repositório e na linha do domínio que ele exercita. Onde a célula informa que não há cenário, o repositório não traz uma prática dedicada. Nesse caso a equipe deve recorrer às referências da página [Bibliografia](referencia/bibliografia.md).
 
-| Domínio | Para chegar ao Novato | Para chegar ao Intermediário | Para chegar ao Avançado | Para chegar ao Especialista |
-| --- | --- | --- | --- | --- |
-| Inteligência | Sem cenário dedicado | Sem cenário dedicado | Cenário 13, para as métricas da própria esteira | Sem cenário dedicado |
-| Planejamento | Cenário 01, que liga cada mudança a uma mensagem padronizada e a um registro de versões | Sem cenário dedicado | Sem cenário dedicado | Sem cenário dedicado |
-| Integração | Cenários 03, 04 e 05 | Cenários 03 e 04, com disparo a cada *commit* e a cada *pull request*, e cenário 02 para a estratégia de ramos | Cenário 12, que reaproveita a esteira entre sistemas | Sem cenário dedicado |
-| Teste | Cenários 03, 04 e 05 | Cenário 03, cujos testes exercitam a API em execução | Cenários 06 e 07, de segurança estática e dinâmica | Sem cenário dedicado |
-| Implantação | Cenário 09 | Cenários 08 e 09 | Cenários 10 e 11 | Sem cenário dedicado |
+| Domínio | Fundacional | Novato | Intermediário | Avançado | Especialista |
+| --- | --- | --- | --- | --- | --- |
+| Inteligência | Sem cenário dedicado | Sem cenário dedicado | Sem cenário dedicado | Sem cenário dedicado | Sem cenário dedicado |
+| Planejamento | Sem cenário dedicado | Sem cenário dedicado | Sem cenário dedicado | Sem cenário dedicado | Sem cenário dedicado |
+| Integração | Cenário 01, sobre mensagens de *commit* padronizadas e versão calculada pela esteira. Cenário 02, sobre ramos e regras de proteção | Cenários 03 e 04, que compilam e testam a API e a aplicação web a cada alteração | Sem cenário dedicado | Sem cenário dedicado | Sem cenário dedicado |
+| Teste | Sem cenário dedicado | Cenário 05, que submete a própria esteira a testes automatizados | Cenários 06 e 07, de segurança estática e dinâmica | Sem cenário dedicado | Sem cenário dedicado |
+| Implantação | Sem cenário dedicado | Sem cenário dedicado | Cenários 08 e 09, sobre artefato único e ambientes | Cenários 10 e 11, sobre implantação sem parada | Sem cenário dedicado |
+| Transversal | Não se aplica | Não se aplica | Não se aplica | Cenário 12, sobre reaproveitamento da esteira. Cenário 13, sobre métricas da esteira | Cenário 14, sobre a aplicação da biblioteca a um sistema existente |
 
-O cenário 14 vale para todos os domínios, pois descreve como aplicar a biblioteca do cenário 12 a um sistema que já existe e como repetir esta autoavaliação depois da adoção, de modo que a equipe compare as duas medições.
+O nível do repositório nem sempre coincide com o do modelo. Os testes de segurança dos cenários 06 e 07 aparecem no nível Intermediário do roteiro, embora o modelo os situe no nível Avançado do domínio de teste. Para avaliar um sistema vale o nível do modelo descrito nas tabelas acima. A coluna do repositório apenas ordena o estudo dos cenários na ordem em que o roteiro os apresenta.
+
+O cenário 14 inclui a repetição desta autoavaliação depois da adoção da biblioteca, de modo que a equipe compare as duas medições.

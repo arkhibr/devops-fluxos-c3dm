@@ -1,6 +1,6 @@
 # Glossário de integração e entrega contínuas
 
-Este glossário define os termos usados nos cenários e nas demais páginas do portal. As definições partem do vocabulário comum de *CI/CD* e foram reescritas para o contexto do repositório. Termos em inglês aparecem em itálico e, quando há tradução usual, ela consta da primeira coluna.
+Este glossário define os termos usados nos cenários e nas demais páginas do portal a partir do vocabulário comum de *CI/CD*, sigla que designa a integração e a entrega contínuas. As definições foram reescritas para o contexto do repositório. Termos em inglês aparecem em itálico. A tradução usual consta da primeira coluna da tabela quando ela existe. As siglas ALM, SCM e SDLC são explicadas nas linhas correspondentes da tabela.
 
 | Termo | Definição |
 | --- | --- |
@@ -26,7 +26,7 @@ Este glossário define os termos usados nos cenários e nas demais páginas do p
 | Promover | Elevar um lançamento candidato à condição de lançamento, o que o habilita a ser implantado em produção. |
 | Publicar | Armazenar o artefato empacotado em um repositório de binários imutável, como o registro de contêineres, de modo que a versão seja rastreável. |
 | Ramo (*branch*) | Linha de desenvolvimento paralela no sistema de controle de versão. |
-| Rótulo (*tag*) | Identificação aplicada a um grupo de itens, como código, artefatos e estágios. É usada com frequência para marcar um lançamento candidato com tudo o que se relaciona a ele. |
+| *Tag* | No Git, marca nomeada e fixa aplicada a um *commit* específico, usada com frequência para identificar um lançamento candidato com todo o código que o compõe. Não deve ser confundida com o rótulo, ou *label*, do GitHub, que é uma etiqueta de classificação de *issues* e de *pull requests*. |
 | *Runner* | Máquina, física ou virtual, que executa as tarefas de um *workflow*. |
 | SCM | Sigla de *Source Control Management*, o gerenciamento de controle de versão. O Git é o exemplo mais usado. |
 | SDLC | Sigla de *Software Development Life Cycle*, o ciclo de vida de desenvolvimento de software, que abrange desenvolvimento, compilação, teste e implantação. |
