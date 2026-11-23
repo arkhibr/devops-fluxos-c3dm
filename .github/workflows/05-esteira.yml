@@ -1,0 +1,33 @@
+name: 05 Teste da esteira
+
+on:
+  pull_request:
+    paths:
+      - cenarios/05-teste-da-esteira/**
+      - .github/workflows/05-esteira.yml
+  push:
+    branches: [main]
+    paths:
+      - cenarios/05-teste-da-esteira/**
+      - .github/workflows/05-esteira.yml
+
+permissions:
+  contents: read
+
+jobs:
+  detecta-erro:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+      - name: Rodar o actionlint sobre o exemplo com erro
+        id: lint-exemplo
+        continue-on-error: true
+        run: >-
+          docker run --rm -v "$PWD":/repo -w /repo
+          rhysd/actionlint@sha256:b1934ee5f1c509618f2508e6eb47ee0d3520686341fec936f3b79331f9315667
+          cenarios/05-teste-da-esteira/exemplos/workflow-com-erro.yml
+      - name: Exigir que o actionlint tenha reprovado o exemplo
+        if: steps.lint-exemplo.outcome != 'failure'
+        run: |
+          echo "O actionlint deveria reprovar o exemplo, mas terminou com resultado '${{ steps.lint-exemplo.outcome }}'."
+          exit 1

@@ -1,0 +1,15 @@
+# Exemplo didático com dois erros semânticos que o actionlint detecta.
+# O arquivo fica fora de .github/workflows para que o GitHub nunca o execute.
+name: Exemplo com erro
+
+on:
+  push:
+
+permissions:
+  contents: read
+
+jobs:
+  exemplo:
+    steps:
+      - name: Mostrar o ramo
+        run: echo "ramo ${{ github.refx }}"

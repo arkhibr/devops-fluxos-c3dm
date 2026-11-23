@@ -15,9 +15,9 @@ A tabela relaciona cada ferramenta à sua função e ao cenário em que aparece.
 | .NET SDK e xUnit | Compilação e testes automatizados da API. A cobertura de testes é medida com `coverlet`. | [03](../cenarios/03.md) |
 | Node, Vite e Vitest | Compilação e testes da aplicação web, com cobertura de testes pelo provedor `v8`. | [04](../cenarios/04.md) |
 | ESLint | Análise estática do código JavaScript e TypeScript para apontar erros e desvios de estilo. | [04](../cenarios/04.md) |
-| `actionlint` | Verificador de erros em arquivos de *workflow* do GitHub Actions. | 05 |
-| `yamllint` | Verificador de sintaxe e estilo de arquivos YAML. | 05 |
-| `pytest` | Estrutura de testes em Python usada para verificar convenções dos *workflows*. | 05 |
+| `actionlint` | Verificador de erros em arquivos de *workflow* do GitHub Actions. | [05](../cenarios/05.md) |
+| `yamllint` | Verificador de sintaxe e estilo de arquivos YAML. | [05](../cenarios/05.md) |
+| `pytest` | Estrutura de testes em Python usada para verificar convenções dos *workflows*. | [05](../cenarios/05.md) |
 | CodeQL | Análise estática de segurança que busca vulnerabilidades no código-fonte. | 06 |
 | *Dependency review* | Verificação de vulnerabilidades introduzidas por mudanças nas dependências de um *pull request*. | 06 |
 | Gitleaks | Varredura de segredos, como senhas e chaves, em arquivos e no histórico do repositório. | 06 |
