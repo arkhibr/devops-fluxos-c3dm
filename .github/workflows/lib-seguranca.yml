@@ -15,7 +15,9 @@ on:
         type: string
         default: .gitleaks.toml
       config-codeql:
-        description: Caminho do arquivo de configuração do CodeQL, por exemplo codeql-config.yml dentro da pasta de configuração. Vazio usa a configuração padrão.
+        description: >-
+          Caminho do arquivo de configuração do CodeQL no repositório chamador.
+          Vazio usa a configuração padrão.
         type: string
         default: ''
 
