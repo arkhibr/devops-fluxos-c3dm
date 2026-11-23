@@ -21,22 +21,24 @@ flowchart TB
     F["Ramo de funcionalidade"] --> D["Ramo develop"]
     D --> R["Ramo de release"]
     R --> M["Ramo main"]
-    H["Ramo de correção urgente"] --> M
+    R --> D
+    M --> H["Ramo de correção urgente"]
+    H --> M
     H --> D
 ```
 
-A terceira é o *Release Flow*, praticado pela Microsoft, que combina o desenvolvimento no tronco com ramos de *release* criados somente quando uma versão precisa de manutenção. Correções são feitas no tronco e trazidas ao ramo de *release* por uma operação chamada *cherry-pick*, que copia um *commit* de um ramo para outro.
+A terceira é o *Release Flow*, praticado pela Microsoft, que combina o desenvolvimento no tronco com um ramo de *release* cortado a partir do `main` a cada versão publicada. Na Microsoft o corte ocorre a cada *sprint*. O ramo de *release* é mantido enquanto aquela versão estiver em produção. Toda correção é feita primeiro no `main` e levada ao ramo de *release* por uma operação chamada *cherry-pick*, que copia um *commit* de um ramo para outro.
 
 ```mermaid
 flowchart TB
     T["Tronco main"] --> B["Ramo curto"]
     B --> T
-    T --> L["Ramo release criado ao publicar uma versão"]
+    T --> L["Ramo release cortado a cada versão e mantido em produção"]
     T --> K["Correção feita no tronco"]
     K --> L
 ```
 
-A escolha deste repositório é o TBD. O repositório tem um único ramo de longa duração, uma única linha de versões e uma esteira que valida cada alteração antes da integração, condições em que os ramos permanentes do Git Flow acrescentam custo de integração sem reduzir risco. O Release Flow passa a ser considerado quando existirem versões antigas que precisem de correções isoladas. A pesquisa que originou as métricas DORA associa o desenvolvimento no tronco, com ramos de vida curta, a melhor desempenho de entrega.
+A escolha deste repositório é o TBD. O repositório tem um único ramo de longa duração, uma única linha de versões e uma esteira que valida cada alteração antes da integração, condições em que os ramos permanentes do Git Flow acrescentam custo de integração sem reduzir risco. O Release Flow passa a ser considerado quando mais de uma versão ficar em produção ao mesmo tempo e cada uma precisar de correções isoladas. A pesquisa que originou as métricas DORA associa o desenvolvimento no tronco, com ramos de vida curta, a melhor desempenho de entrega.
 
 ## Workflow do cenário
 
@@ -58,17 +60,17 @@ O ruleset declara um ator de contorno, que é o papel de administrador do reposi
 
 ## Como executar
 
-1. Com o GitHub CLI autenticado como administrador do repositório, execute `cenarios/02-estrategia-branches/aplicar-ruleset.sh arkhibr/devops-fluxos-c3dm`. O *script* informa se criou ou atualizou o ruleset e lista os rulesets existentes.
+1. Instale o GitHub CLI e o `jq`, ambos usados pelo *script*. Autentique o GitHub CLI como administrador do repositório. Depois execute `cenarios/02-estrategia-branches/aplicar-ruleset.sh arkhibr/devops-fluxos-c3dm`. O *script* informa se criou ou atualizou o ruleset e lista os rulesets existentes.
 2. Confira o resultado com `gh api repos/arkhibr/devops-fluxos-c3dm/rulesets` ou na página *Rulesets* da seção *Rules* em *Settings*.
-3. Crie um ramo, faça uma alteração pequena e abra um *pull request*. O modelo de descrição aparece preenchido com as três seções.
-4. Observe que o botão de integração só é liberado quando as quatro verificações passam. Integre com *squash* e apague o ramo.
+3. Crie um ramo, faça uma alteração pequena e abra um *pull request*. O modelo de descrição aparece preenchido com quatro seções. Elas pedem o que muda, o motivo, a verificação realizada e uma lista de conferência.
+4. Observe que, para quem não é administrador, o botão de integração só é liberado quando as quatro verificações passam. Quem tem permissão de contorno vê o botão de integração com a opção de contornar as regras, mesmo com verificações pendentes. Integre com *squash* e apague o ramo.
 5. Tente um *push* direto no `main` com uma conta que não seja administradora. A operação é recusada. Contas administradoras contornam a regra, conforme descrito na seção anterior.
 
 ## Como levar a prática a um sistema existente
 
 1. Mapeie os ramos de longa duração existentes e a razão de cada um. Ramos de ambiente, como `homologacao`, podem ser substituídos por implantações feitas a partir do `main`. Esse tema é tratado nos cenários 09 a 11.
 2. Escolha o ramo padrão e copie `ruleset-main.json`, ajustando os nomes das verificações obrigatórias para os jobs do sistema.
-3. Aplique o ruleset primeiro com `enforcement` igual a `evaluate`, modo que registra as violações sem bloquear. Depois de uma ou duas semanas sem ocorrências inesperadas, mude para `active`.
+3. Aplique o ruleset primeiro com `enforcement` igual a `evaluate`, modo que registra as violações sem bloquear. Esse modo só existe nos planos GitHub Enterprise. Nos demais planos, ajuste o campo `include` para um ramo de teste e só depois o amplie para o ramo padrão. Depois de uma ou duas semanas sem ocorrências inesperadas, passe a `active`.
 4. Reduza gradualmente a vida dos ramos de funcionalidade. Esconder trabalho incompleto atrás de *feature flags*, chaves de configuração que ativam ou desativam uma funcionalidade em execução, permite integrar com frequência sem expor o que não está pronto.
 5. Revise o ator de contorno. Se não houver *pull requests* gerados por *token* de *workflow*, remova o bloco `bypass_actors` e submeta também os administradores às regras.
 

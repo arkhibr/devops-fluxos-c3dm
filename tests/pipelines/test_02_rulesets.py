@@ -59,3 +59,29 @@ def test_script_usa_gh_api():
     assert "/rulesets" in script
     assert "--method PUT" in script
     assert not re.search(r"gh[pousr]_[A-Za-z0-9]{20,}|github_pat_|Bearer\s+[A-Za-z0-9]", script)
+
+
+def contextos_exigidos() -> set[str]:
+    return {c["context"] for c in regras_por_tipo()["required_status_checks"]["parameters"]["required_status_checks"]}
+
+
+def test_cada_contexto_pertence_a_um_unico_workflow():
+    for contexto in contextos_exigidos():
+        donos = [
+            a.name
+            for a in listar_workflows()
+            for id_job, definicao in jobs(carregar_workflow(a.name)).items()
+            if definicao.get("name", id_job) == contexto
+        ]
+        assert len(donos) == 1, f"{contexto} aparece em {donos}"
+
+
+def test_workflow_dono_roda_em_todo_pull_request():
+    # Verificação obrigatória sem execução deixa o pull request à espera para sempre.
+    for contexto in contextos_exigidos():
+        for arquivo in listar_workflows():
+            wf = carregar_workflow(arquivo.name)
+            if any(d.get("name", i) == contexto for i, d in jobs(wf).items()):
+                pr = wf["on"]["pull_request"] if isinstance(wf["on"], dict) else None
+                assert "pull_request" in wf["on"], arquivo.name
+                assert not pr or ("paths" not in pr and "paths-ignore" not in pr), arquivo.name
