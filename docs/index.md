@@ -37,19 +37,19 @@ A tabela relaciona os quatorze cenários ao nível do C3DM em que cada um se enq
 | Nº | Cenário | Nível |
 | --- | --- | --- |
 | [01](cenarios/01.md) | Mensagens de *commit* convencionais e versionamento semântico automático | Fundacional |
-| 02 | Estratégia de *branches* e *rulesets* de proteção versionados | Fundacional |
-| 03 | Compilação e teste da API .NET com cobertura | Novato |
-| 04 | Compilação e teste da aplicação React com *lint* e cobertura | Novato |
-| 05 | Teste da própria esteira com `actionlint`, `yamllint` e `pytest` | Novato |
-| 06 | Análise estática, análise de dependências e varredura de segredos | Intermediário |
-| 07 | Análise dinâmica de segurança com OWASP ZAP | Intermediário |
-| 08 | Artefato único em imagem de contêiner promovida sem recompilação | Intermediário |
-| 09 | Ambientes de homologação e produção | Intermediário |
-| 10 | Implantação *blue-green* | Avançado |
-| 11 | Implantação canário | Avançado |
-| 12 | Biblioteca de *workflows* reutilizáveis e *composite actions* | Avançado |
-| 13 | Métricas DORA e métricas de esteira | Avançado |
-| 14 | Aplicação da biblioteca a um sistema existente | Especialista |
+| [02](cenarios/02.md) | Estratégia de *branches* e *rulesets* de proteção versionados | Fundacional |
+| [03](cenarios/03.md) | Compilação e teste da API .NET com cobertura | Novato |
+| [04](cenarios/04.md) | Compilação e teste da aplicação React com *lint* e cobertura | Novato |
+| [05](cenarios/05.md) | Teste da própria esteira com `actionlint`, `yamllint` e `pytest` | Novato |
+| [06](cenarios/06.md) | Análise estática, análise de dependências e varredura de segredos | Intermediário |
+| [07](cenarios/07.md) | Análise dinâmica de segurança com OWASP ZAP | Intermediário |
+| [08](cenarios/08.md) | Artefato único em imagem de contêiner promovida sem recompilação | Intermediário |
+| [09](cenarios/09.md) | Ambientes de homologação e produção | Intermediário |
+| [10](cenarios/10.md) | Implantação *blue-green* | Avançado |
+| [11](cenarios/11.md) | Implantação canário | Avançado |
+| [12](cenarios/12.md) | Biblioteca de *workflows* reutilizáveis e *composite actions* | Avançado |
+| [13](cenarios/13.md) | Métricas DORA e métricas de esteira | Avançado |
+| [14](cenarios/14.md) | Aplicação da biblioteca a um sistema existente | Especialista |
 
 ## Licença
 

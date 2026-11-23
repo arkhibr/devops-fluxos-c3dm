@@ -69,7 +69,9 @@ Os demais chamadores seguem o mesmo formato, com as exigências descritas a segu
 
 ### Versão v1
 
-A versão `v1.0.0` foi publicada manualmente. A organização bloqueia que o GitHub Actions abra *pull requests*, de modo que o `release-please` não consegue abrir o *pull request* de *release*. A *tag* móvel `v1`, mantida pelo cenário 01, aponta para o mesmo *commit* da `v1.0.0`. Uma mudança que quebra a compatibilidade das entradas exige uma nova versão maior chamada `v2`. Os chamadores que usam a versão maior 1 continuam funcionando até migrarem para a versão maior 2.
+As versões `v1.0.0` e `v1.0.1` foram publicadas manualmente porque a organização bloqueia a abertura de *pull requests* pelo GitHub Actions, o que impede o `release-please` de abrir o *pull request* de *release*. A *tag* móvel `v1` do cenário 01 aponta para a última versão `v1.x.y` publicada, que hoje é a `v1.0.1`. Uma mudança que quebra a compatibilidade das entradas exige uma nova versão maior chamada `v2`. Os chamadores que usam a versão maior 1 continuam funcionando até migrarem para a versão maior 2.
+
+Os *workflows* da biblioteca referenciam a *composite action* `resumo-falha` pela *tag* móvel `@v1`, sem fixar um SHA. Um chamador que fixa o *workflow* da biblioteca por SHA continua recebendo a *composite action* pela *tag* móvel, que o mantenedor pode reapontar para outro *commit*. Esse comportamento facilita a publicação de correções, porém contraria a recomendação de segurança da cadeia de suprimentos, que pede referências imutáveis. Para evitá-la, o mantenedor da biblioteca pode fixar a *action* por SHA dentro dos próprios *workflows* e atualizar o SHA a cada *release*, mantendo a versão em comentário. O chamador também pode copiar a biblioteca para um repositório próprio e fixar nele todas as referências.
 
 ## Como executar
 

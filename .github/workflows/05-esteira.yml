@@ -26,8 +26,15 @@ jobs:
           docker run --rm -v "$PWD":/repo -w /repo
           rhysd/actionlint@sha256:b1934ee5f1c509618f2508e6eb47ee0d3520686341fec936f3b79331f9315667
           cenarios/05-teste-da-esteira/exemplos/workflow-com-erro.yml
+          > "$RUNNER_TEMP/actionlint-exemplo.txt" 2>&1
       - name: Exigir que o actionlint tenha reprovado o exemplo
         if: steps.lint-exemplo.outcome != 'failure'
         run: |
           echo "O actionlint deveria reprovar o exemplo, mas terminou com resultado '${{ steps.lint-exemplo.outcome }}'."
           exit 1
+      - name: Exigir que a reprovação seja pelos dois erros esperados
+        if: steps.lint-exemplo.outcome == 'failure'
+        run: |
+          cat "$RUNNER_TEMP/actionlint-exemplo.txt"
+          grep -q 'refx' "$RUNNER_TEMP/actionlint-exemplo.txt"
+          grep -q 'runs-on' "$RUNNER_TEMP/actionlint-exemplo.txt"
