@@ -65,7 +65,7 @@ O repositório atribui um único nível a cada cenário. Esse agrupamento é uma
 | Inteligência | Sem cenário dedicado | Sem cenário dedicado | Sem cenário dedicado | Sem cenário dedicado | Sem cenário dedicado |
 | Planejamento | Sem cenário dedicado | Sem cenário dedicado | Sem cenário dedicado | Sem cenário dedicado | Sem cenário dedicado |
 | Integração | [Cenário 01](cenarios/01.md), sobre mensagens de *commit* padronizadas e versão calculada pela esteira. [Cenário 02](cenarios/02.md), sobre ramos e regras de proteção | [Cenário 03](cenarios/03.md), que compila e testa a API a cada alteração, e [cenário 04](cenarios/04.md), que faz o mesmo com a aplicação web | Sem cenário dedicado | Sem cenário dedicado | Sem cenário dedicado |
-| Teste | Sem cenário dedicado | [Cenário 05](cenarios/05.md), que submete a própria esteira a testes automatizados | [Cenário 06](cenarios/06.md), de segurança estática, e cenário 07, de segurança dinâmica | Sem cenário dedicado | Sem cenário dedicado |
+| Teste | Sem cenário dedicado | [Cenário 05](cenarios/05.md), que submete a própria esteira a testes automatizados | [Cenário 06](cenarios/06.md), de segurança estática, e [cenário 07](cenarios/07.md), de segurança dinâmica | Sem cenário dedicado | Sem cenário dedicado |
 | Implantação | Sem cenário dedicado | Sem cenário dedicado | Cenários 08 e 09, sobre artefato único e ambientes | Cenários 10 e 11, sobre implantação sem parada | Sem cenário dedicado |
 | Transversal | Não se aplica | Não se aplica | Não se aplica | Cenário 12, sobre reaproveitamento da esteira. Cenário 13, sobre métricas da esteira | Cenário 14, sobre a aplicação da biblioteca a um sistema existente |
 

@@ -62,6 +62,7 @@ public class EndpointsTests
         Assert.Equal("default-src 'none'; frame-ancestors 'none'",
             resposta.Headers.GetValues("Content-Security-Policy").Single());
         Assert.Equal("no-referrer", resposta.Headers.GetValues("Referrer-Policy").Single());
+        Assert.Equal("same-origin", resposta.Headers.GetValues("Cross-Origin-Resource-Policy").Single());
         Assert.Equal("no-store", resposta.Headers.GetValues("Cache-Control").Single());
     }
 }
