@@ -4,7 +4,8 @@ import re
 from workflows import carregar_workflow, passos
 
 ARQUIVO = "08-artefato.yml"
-IMAGENS = ("devops-fluxos-c3dm-api", "devops-fluxos-c3dm-web")
+PREFIXO = "devops-fluxos-c3dm"
+COMPONENTES = ("api", "web")
 
 
 def _texto(job: str) -> str:
@@ -68,8 +69,8 @@ def yaml_env(wf: dict) -> str:
 def test_nomes_das_imagens_e_paths():
     wf = carregar_workflow(ARQUIVO)
     texto = str(wf)
-    for imagem in IMAGENS:
-        assert f"ghcr.io/arkhibr/{imagem}" in texto or imagem.rsplit("-", 1)[1] in texto
+    assert f"ghcr.io/arkhibr/{PREFIXO}" in texto
+    assert wf["jobs"]["publicar"]["strategy"]["matrix"]["componente"] == list(COMPONENTES)
     assert set(wf["jobs"]) == {"validar-imagem", "publicar", "promover"}
     for evento in ("pull_request", "push"):
         assert ".github/workflows/08-artefato.yml" in wf["on"][evento]["paths"]

@@ -1,8 +1,13 @@
 # Configuração do Gitleaks do repositório. Estende as regras padrão e ignora
-# somente a pasta de fixtures do cenário 06, que contém um segredo falso de propósito.
+# a pasta de fixtures do cenário 06, que contém um segredo falso de propósito, e um
+# commit do histórico em que o nome da imagem `...-api` num teste foi lido como chave de API.
 [extend]
 useDefault = true
 
 [[allowlists]]
 description = "Fixtures do cenário 06, que devem ser reprovados pela varredura de segredos"
 paths = ['''^cenarios/06-seguranca-estatica/fixtures/''']
+
+[[allowlists]]
+description = "Falso positivo no histórico: nome de imagem de contêiner lido como generic-api-key em um teste do cenário 08"
+commits = ["c4ade355e99993d41d040f2862fa2fc8a7a6d252"]
