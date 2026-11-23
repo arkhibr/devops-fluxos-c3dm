@@ -17,6 +17,7 @@ def test_release_please_pacote_unico():
     config = json.loads((RAIZ / "release-please-config.json").read_text(encoding="utf-8"))
     assert list(config["packages"]) == ["."]
     assert config["packages"]["."]["release-type"] == "simple"
+    assert config["packages"]["."]["release-as"] == "1.0.0"  # remover após publicar v1.0.0
     assert config["include-v-in-tag"] is True
     manifesto = json.loads((RAIZ / ".release-please-manifest.json").read_text(encoding="utf-8"))
     assert manifesto == {".": "0.0.0"}
@@ -26,12 +27,19 @@ def test_release_roda_somente_em_push_na_main():
     wf = carregar_workflow("01-release.yml")
     assert set(wf["on"]) == {"push"}
     assert wf["on"]["push"]["branches"] == ["main"]
+    assert {"contents": "write", "pull-requests": "write", "issues": "write", "actions": "write"} == wf["permissions"]
+    comandos = "\n".join(p.get("run", "") for p in passos(wf, "release-please"))
+    assert "gh workflow run 01-tag-principal.yml" in comandos
+    guarda = next(p for p in passos(wf, "release-please") if "gh workflow run" in p.get("run", ""))["if"]
+    assert "release_created" in guarda
 
 
 def test_tag_principal_dispara_em_release():
     wf = carregar_workflow("01-tag-principal.yml")
     assert wf["on"]["release"]["types"] == ["published"]
+    assert "workflow_dispatch" in wf["on"]
     assert wf["permissions"] == {"contents": "write"}
     comandos = "\n".join(p.get("run", "") for p in passos(wf, "tag-principal"))
     assert "GITHUB_REF_NAME%%.*" in comandos
-    assert comandos.index('git tag -f "$principal"') < comandos.index('git push -f origin "$principal"')
+    assert comandos.index('git tag -f "$principal"') < comandos.index('git push -f origin "refs/tags/$principal"')
+    assert "=~ ^v[0-9]+\\." in comandos and "exit 1" in comandos

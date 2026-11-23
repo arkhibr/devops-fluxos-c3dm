@@ -19,6 +19,7 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
       - name: Mover a tag da versão maior para esta release
         run: |
+          [[ $GITHUB_REF_NAME =~ ^v[0-9]+\. ]] || { echo "A referência $GITHUB_REF_NAME não é uma tag de versão"; exit 1; }
           principal="${GITHUB_REF_NAME%%.*}"
           git tag -f "$principal"
-          git push -f origin "$principal"
+          git push -f origin "refs/tags/$principal"

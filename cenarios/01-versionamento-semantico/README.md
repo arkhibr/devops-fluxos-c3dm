@@ -19,7 +19,7 @@ O ponto de exclamação depois do tipo, ou um rodapé `BREAKING CHANGE:` no corp
 
 ## Workflow do cenário
 
-O cenário usa três *workflows*, que são arquivos YAML em `.github/workflows/` executados pelo GitHub Actions para reagir a eventos do repositório. O primeiro é o `01-titulo-pr.yml`, que valida o título de cada *pull request* com a ação `amannn/action-semantic-pull-request` e aceita os tipos `feat` `fix` `docs` `chore` `ci` `test` `refactor` separados por espaço na configuração. Um *pull request* é a proposta de integrar uma alteração ao ramo principal. A validação recai sobre o título porque a integração com a opção *squash* reúne todos os *commits* em um só cuja mensagem é esse título.
+O cenário usa três *workflows*, que são arquivos YAML em `.github/workflows/` executados pelo GitHub Actions para reagir a eventos do repositório. O primeiro é o `01-titulo-pr.yml`, que valida o título de cada *pull request* com a ação `amannn/action-semantic-pull-request` e aceita sete tipos, listados na configuração do próprio arquivo. Um *pull request* é a proposta de integrar uma alteração ao ramo principal. A validação recai sobre o título porque a integração com a opção *squash* reúne todos os *commits* em um só. Isso vale somente quando o repositório está configurado para usar o título do *pull request* como mensagem desse *commit*, pré-requisito descrito na seção sobre execução.
 
 O segundo é o `01-release.yml`, que roda a cada *push* no ramo `main` e executa a ferramenta `release-please`, sendo *push* o envio de *commits* ao repositório remoto. A ferramenta lê as mensagens desde a última versão, calcula a próxima e mantém aberto um *pull request* de *release* que atualiza o arquivo `version.txt` e o `CHANGELOG.md`. Quando esse *pull request* é integrado, ela cria a *tag* `vX.Y.Z` e a *release* correspondente a partir da configuração de `release-please-config.json`, que declara um único pacote na raiz do repositório com ponto de partida `0.0.0` em `.release-please-manifest.json`.
 
@@ -45,10 +45,16 @@ sequenceDiagram
 
 1. Abra um *pull request* com um título fora do padrão, como `atualiza arquivos`. A verificação `01 Título do pull request` reprova e informa os tipos aceitos.
 2. Edite o título para `fix: corrige a mensagem de erro` e confirme que a verificação passa.
-3. Integre o *pull request* com *squash*. Em seguida abra a aba *Pull requests* e localize o *pull request* de título `chore(main): release 0.0.1`, mantido pelo `release-please`.
-4. Integre esse *pull request*. Confira em *Releases* a versão `v0.0.1`. Confira também em *Tags* a *tag* móvel `v0`, que passa a apontar para o mesmo *commit*.
+3. Integre o *pull request* com *squash*. Em seguida abra a aba *Pull requests* e localize o *pull request* de título `chore(main): release 1.0.0`, mantido pelo `release-please`.
+4. Integre esse *pull request*. Confira em *Releases* a versão `v1.0.0`. Confira também em *Tags* a *tag* móvel `v1`, que passa a apontar para o mesmo *commit*. Nas *releases* seguintes um `fix` produz `v1.0.1` e um `feat` produz `v1.1.0`. Uma mudança com `!` produz `v2.0.0`, caso em que a *tag* móvel passa a ser `v2`.
 
-A criação do *pull request* de *release* exige que o repositório permita ao GitHub Actions criar *pull requests*. A opção fica na seção *Workflow permissions* de *Settings*, *Actions* e *General*. Em repositórios de organizações a política da organização pode bloquear essa opção, caso em que a ferramenta falha ao abrir o *pull request* de *release* com a mensagem de que o Actions não pode criar *pull requests*.
+O primeiro pré-requisito da prática é que o repositório use o título do *pull request* como mensagem do *commit* de *squash*, com as opções de *merge commit* e de *rebase* desativadas. Neste repositório isso foi configurado pela API do GitHub com `squash_merge_commit_title=PR_TITLE` e `squash_merge_commit_message=PR_BODY`.
+
+A primeira *release* usa a opção `release-as` de `release-please-config.json`, que fixa a versão em `1.0.0`. Sem ela o histórico inicial produziria a versão `0.1.0` e a *tag* móvel `v0`, enquanto os cenários seguintes referenciam `@v1`. Depois da publicação de `v1.0.0` essa linha deve ser removida para que as versões seguintes voltem a ser calculadas pelos tipos das mensagens.
+
+A criação do *pull request* de *release* exige que o repositório permita ao GitHub Actions criar *pull requests*. A opção fica na seção *Workflow permissions* de *Settings*, *Actions* e *General*. Em repositórios de organizações a política da organização pode bloquear essa opção, caso em que a ferramenta falha ao abrir o *pull request* de *release* com a mensagem de que o Actions não pode criar *pull requests*. Na organização `arkhibr` essa política está bloqueada hoje e a liberação depende de um administrador da organização.
+
+Os *pull requests* abertos com o `GITHUB_TOKEN` não disparam outros *workflows*. Por isso as verificações obrigatórias não rodam sobre o *pull request* de *release*. Neste repositório os administradores têm permissão de contorno nas regras de proteção, apresentadas no cenário 02. Os administradores integram esse *pull request*. Em produção a alternativa é gerar o *token* de um GitHub App e passá-lo ao `release-please`, o que faz as verificações rodarem normalmente. Se o passo que aciona o `01-tag-principal.yml` falhar, a *tag* móvel pode ser atualizada manualmente em *Actions*, executando esse *workflow* com a *tag* da *release* como referência.
 
 ## Como levar a prática a um sistema existente
 
