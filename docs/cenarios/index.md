@@ -5,7 +5,7 @@ Cada cenário do roteiro tem uma página própria neste portal, produzida a part
 Fundacional:
 
 - [01 Mensagens de *commit* convencionais e versionamento semântico automático](01.md)
-- 02 Estratégia de *branches* e *rulesets* de proteção versionados
+- [02 Estratégia de *branches* e *rulesets* de proteção versionados](02.md)
 
 Novato:
 
