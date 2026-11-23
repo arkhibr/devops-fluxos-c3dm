@@ -1,0 +1,143 @@
+name: 08 Artefato único
+
+on:
+  pull_request:
+    paths:
+      - apps/**
+      - cenarios/08-artefato-unico/**
+      - .github/workflows/08-artefato.yml
+  push:
+    branches: [main]
+    paths:
+      - apps/**
+      - cenarios/08-artefato-unico/**
+      - .github/workflows/08-artefato.yml
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: Prefixo de 7 a 40 caracteres hexadecimais do commit cuja imagem será promovida
+        required: true
+        type: string
+      ambiente:
+        description: Ambiente que recebe a tag
+        required: true
+        type: choice
+        options:
+          - homologacao
+          - producao
+
+permissions:
+  contents: read
+
+concurrency:
+  group: 08-artefato-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  REGISTRO: ghcr.io/arkhibr/devops-fluxos-c3dm
+
+jobs:
+  validar-imagem:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        componente: [api, web]
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069  # v4.4.1
+      - name: Construir a imagem sem publicar
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc  # v7.4.0
+        with:
+          context: apps/${{ matrix.componente }}
+          push: false
+
+  publicar:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        componente: [api, web]
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069  # v4.4.1
+      - name: Autenticar no GHCR com o GITHUB_TOKEN
+        uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550  # v4.8.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Calcular a tag sha-<sha7>
+        id: meta
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302  # v6.2.0
+        with:
+          images: ${{ env.REGISTRO }}-${{ matrix.componente }}
+          tags: type=sha,prefix=sha-,format=short
+      - name: Construir e publicar a imagem uma única vez
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc  # v7.4.0
+        with:
+          context: apps/${{ matrix.componente }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: |
+            ${{ steps.meta.outputs.labels }}
+            org.opencontainers.image.source=https://github.com/arkhibr/devops-fluxos-c3dm
+
+  promover:
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069  # v4.4.1
+      - name: Autenticar no GHCR com o GITHUB_TOKEN
+        uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550  # v4.8.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Validar as entradas
+        id: entradas
+        env:
+          SHA_ENTRADA: ${{ inputs.sha }}
+          AMBIENTE_ENTRADA: ${{ inputs.ambiente }}
+        run: |
+          if ! [[ "$SHA_ENTRADA" =~ ^[0-9a-f]{7,40}$ ]]; then
+            echo "::error::O sha deve ter de 7 a 40 caracteres hexadecimais em minúsculas."
+            exit 1
+          fi
+          case "$AMBIENTE_ENTRADA" in
+            homologacao | producao) ;;
+            *)
+              echo "::error::Ambiente inválido. Use homologacao ou producao."
+              exit 1
+              ;;
+          esac
+          echo "sha7=${SHA_ENTRADA:0:7}" >> "$GITHUB_OUTPUT"
+      - name: Criar a tag do ambiente sobre a mesma imagem, sem reconstruir
+        env:
+          SHA7: ${{ steps.entradas.outputs.sha7 }}
+          AMBIENTE_ENTRADA: ${{ inputs.ambiente }}
+        run: |
+          for componente in api web; do
+            imagem="${REGISTRO}-${componente}"
+            docker buildx imagetools create -t "${imagem}:${AMBIENTE_ENTRADA}" "${imagem}:sha-${SHA7}"
+          done
+      - name: Conferir que as tags apontam para o mesmo digest
+        env:
+          SHA7: ${{ steps.entradas.outputs.sha7 }}
+          AMBIENTE_ENTRADA: ${{ inputs.ambiente }}
+        run: |
+          for componente in api web; do
+            imagem="${REGISTRO}-${componente}"
+            origem=$(docker buildx imagetools inspect "${imagem}:sha-${SHA7}" --format '{{json .Manifest.Digest}}')
+            destino=$(docker buildx imagetools inspect "${imagem}:${AMBIENTE_ENTRADA}" --format '{{json .Manifest.Digest}}')
+            echo "${componente}: sha-${SHA7}=${origem} ${AMBIENTE_ENTRADA}=${destino}"
+            [ "$origem" = "$destino" ] || { echo "::error::Digests diferentes em ${componente}."; exit 1; }
+          done

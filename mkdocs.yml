@@ -40,6 +40,7 @@ nav:
       - 05 Teste da esteira: cenarios/05.md
       - 06 Segurança estática: cenarios/06.md
       - 07 Segurança dinâmica: cenarios/07.md
+      - 08 Artefato único: cenarios/08.md
   - Referência:
       - Glossário: referencia/glossario.md
       - Métricas: referencia/metricas.md
