@@ -1,2 +1,3 @@
 # Regras do ZAP baseline, uma por linha, separadas por tabulação: id, ação, justificativa.
 # Só se rebaixa uma regra com justificativa no terceiro campo da mesma linha.
+10049	IGNORE	Alerta informativo de conteúdo não armazenável em cache. A API responde Cache-Control no-store de propósito, e corrigir seria enfraquecer o cabeçalho.

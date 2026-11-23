@@ -12,6 +12,7 @@ public sealed class CabecalhosSeguranca(RequestDelegate proximo)
             cabecalhos["X-Frame-Options"] = "DENY";
             cabecalhos["Content-Security-Policy"] = "default-src 'none'; frame-ancestors 'none'";
             cabecalhos["Referrer-Policy"] = "no-referrer";
+            cabecalhos["Cross-Origin-Resource-Policy"] = "same-origin";
             cabecalhos["Cache-Control"] = "no-store";
             return Task.CompletedTask;
         });
