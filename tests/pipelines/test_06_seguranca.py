@@ -19,9 +19,12 @@ def test_gitleaks_ignora_somente_fixtures():
     config = tomllib.loads((RAIZ / ".gitleaks.toml").read_text(encoding="utf-8"))
     assert config["extend"]["useDefault"] is True
     listas = config["allowlists"]
-    assert len(listas) == 1
     assert listas[0]["paths"] == [f"^{FIXTURES}/"]
     assert not {"regexes", "commits", "stopwords"} & set(listas[0])
+    # Demais exceções só podem ser por commit do histórico, nunca por caminho ou regex.
+    for extra in listas[1:]:
+        assert set(extra) == {"description", "commits"}
+        assert extra["description"].strip()
 
 
 def test_fixtures_verificam_outcome():
