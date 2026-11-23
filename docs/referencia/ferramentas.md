@@ -12,7 +12,7 @@ A tabela relaciona cada ferramenta à sua função e ao cenário em que aparece.
 | Conventional Commits | Convenção de mensagens de *commit* que permite derivar o tipo da mudança. | [01](../cenarios/01.md) |
 | `release-please` | Ferramenta que calcula a próxima versão semântica e mantém o registro de mudanças a partir das mensagens de *commit*. | [01](../cenarios/01.md) |
 | *Rulesets* do GitHub | Regras de proteção de ramos descritas em arquivo e aplicadas ao repositório. | [02](../cenarios/02.md) |
-| .NET SDK e xUnit | Compilação e testes automatizados da API. A cobertura de testes é medida com `coverlet`. | 03 |
+| .NET SDK e xUnit | Compilação e testes automatizados da API. A cobertura de testes é medida com `coverlet`. | [03](../cenarios/03.md) |
 | Node, Vite e Vitest | Compilação e testes da aplicação web, com cobertura de testes pelo provedor `v8`. | 04 |
 | ESLint | Análise estática do código JavaScript e TypeScript para apontar erros e desvios de estilo. | 04 |
 | `actionlint` | Verificador de erros em arquivos de *workflow* do GitHub Actions. | 05 |
