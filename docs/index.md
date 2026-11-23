@@ -4,7 +4,7 @@ Este portal documenta um roteiro executável de práticas de *CI/CD*, sigla de i
 
 ## Objetivo
 
-O roteiro permite que uma equipe observe cada prática funcionando sobre um código real. Em seguida a equipe executa o cenário no próprio repositório. Por fim avalia como levar a mesma prática ao seu sistema. Os cenários seguem o C3DM, sigla em inglês para o modelo de maturidade de entrega contínua que organiza o conjunto em cinco níveis, do Fundacional ao Especialista. A página [Modelo de maturidade C3DM](modelo-c3dm.md) explica o modelo em detalhe. A página [Trilha de adoção](trilha.md) relaciona cada nível aos cenários.
+O roteiro permite que uma equipe observe cada prática funcionando sobre um código real. Em seguida a equipe executa o cenário no próprio repositório. Por fim a equipe avalia como levar a mesma prática ao sistema que mantém. Os cenários seguem o C3DM, sigla em inglês para o modelo de maturidade de entrega contínua que organiza o conjunto em cinco níveis, do Fundacional ao Especialista. A página [Modelo de maturidade C3DM](modelo-c3dm.md) explica o modelo em detalhe. A página [Trilha de adoção](trilha.md) relaciona cada nível aos cenários.
 
 O diagrama mostra o caminho que uma alteração percorre nos cenários do repositório, do envio do código à produção.
 

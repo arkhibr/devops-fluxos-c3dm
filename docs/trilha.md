@@ -1,6 +1,6 @@
 # Trilha de adoção pelo modelo C3DM
 
-Esta página relaciona os cenários do repositório aos níveis do modelo C3DM. As definições do modelo estão na página [Modelo de maturidade C3DM](modelo-c3dm.md), que reúne níveis, domínios, matriz e fontes. A página [Autoavaliação](autoavaliacao.md) transforma cada célula da matriz em uma evidência observável. A esteira é a sequência automatizada de compilação, teste e implantação que leva uma alteração do código até o ambiente de execução.
+Esta página relaciona os cenários do repositório aos níveis do modelo C3DM. As definições do modelo estão na página [Modelo de maturidade C3DM](modelo-c3dm.md). Essa página reúne os níveis, os domínios, a matriz e as fontes do modelo. A página [Autoavaliação](autoavaliacao.md) transforma cada célula da matriz em uma evidência observável. A esteira é a sequência automatizada de compilação, teste e implantação que leva uma alteração do código até o ambiente de execução.
 
 ## Cenários por nível do repositório
 
