@@ -1,0 +1,133 @@
+name: 06 Segurança estática
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: 06-seguranca-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  codeql:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [csharp, javascript-typescript]
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+      - uses: github/codeql-action/init@1bd86f2fdb4b86187fa4059f16f31a3202acc9ea  # v4.39.4
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: none
+          config-file: ./.github/codeql/codeql-config.yml
+      - uses: github/codeql-action/analyze@1bd86f2fdb4b86187fa4059f16f31a3202acc9ea  # v4.39.4
+        with:
+          category: /language:${{ matrix.language }}
+
+  dependencias:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+      - uses: actions/dependency-review-action@bbc44d14a204704ccc493733616cd1e93a0321ec  # v5.0.1
+        with:
+          fail-on-severity: high
+          # Avisos do lodash 4.17.15 dos fixtures do cenário, vulneráveis de propósito.
+          allow-ghsas: GHSA-35jh-r3h4-6jhm, GHSA-p6mc-m468-83gw, GHSA-r5fr-rjxr-66jc
+
+  segredos:
+    runs-on: ubuntu-latest
+    env:
+      GITLEAKS_VERSION: 8.30.1
+      GITLEAKS_SHA256: 551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+        with:
+          fetch-depth: 0
+      - name: Instalar o Gitleaks com verificação de checksum
+        run: |
+          curl -sSfL -o "$RUNNER_TEMP/gitleaks.tar.gz" \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          echo "${GITLEAKS_SHA256}  $RUNNER_TEMP/gitleaks.tar.gz" | sha256sum -c -
+          mkdir "$RUNNER_TEMP/gitleaks"
+          tar -xzf "$RUNNER_TEMP/gitleaks.tar.gz" -C "$RUNNER_TEMP/gitleaks" gitleaks
+          echo "$RUNNER_TEMP/gitleaks" >> "$GITHUB_PATH"
+      - name: Varrer o repositório e o histórico
+        run: gitleaks detect --source . --config .gitleaks.toml --redact --exit-code 1
+
+  fixtures-devem-reprovar:
+    runs-on: ubuntu-latest
+    env:
+      GITLEAKS_VERSION: 8.30.1
+      GITLEAKS_SHA256: 551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb
+      OSV_VERSION: 2.7.1
+      OSV_SHA256: fb7dab19a8bd9bbe5c3189f09d4b7ee1820c9553a23bac202648a56efd2f6ee8
+      SEMGREP_VERSION: 1.186.0
+      FIXTURES: cenarios/06-seguranca-estatica/fixtures
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+      - name: Instalar Semgrep, Gitleaks e OSV-Scanner nas versões fixadas
+        run: |
+          python3 -m venv "$RUNNER_TEMP/semgrep"
+          "$RUNNER_TEMP/semgrep/bin/pip" install --quiet "semgrep==${SEMGREP_VERSION}"
+          mkdir "$RUNNER_TEMP/bin"
+          curl -sSfL -o "$RUNNER_TEMP/gitleaks.tar.gz" \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          echo "${GITLEAKS_SHA256}  $RUNNER_TEMP/gitleaks.tar.gz" | sha256sum -c -
+          tar -xzf "$RUNNER_TEMP/gitleaks.tar.gz" -C "$RUNNER_TEMP/bin" gitleaks
+          curl -sSfL -o "$RUNNER_TEMP/bin/osv-scanner" \
+            "https://github.com/google/osv-scanner/releases/download/v${OSV_VERSION}/osv-scanner_linux_amd64"
+          echo "${OSV_SHA256}  $RUNNER_TEMP/bin/osv-scanner" | sha256sum -c -
+          chmod +x "$RUNNER_TEMP/bin/osv-scanner"
+          echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
+      - name: Semgrep sobre o código com injeção de SQL
+        id: semgrep
+        continue-on-error: true
+        run: >-
+          "$RUNNER_TEMP/semgrep/bin/semgrep" scan --config p/csharp --error --metrics=off
+          --json --output "$RUNNER_TEMP/semgrep.json" "$FIXTURES"
+      - name: Gitleaks sobre o arquivo com segredo falso
+        id: gitleaks
+        continue-on-error: true
+        run: >-
+          gitleaks detect --no-git --source "$FIXTURES" --redact --exit-code 1
+          --report-format json --report-path "$RUNNER_TEMP/gitleaks.json"
+      - name: OSV-Scanner sobre o lockfile com lodash vulnerável
+        id: osv
+        continue-on-error: true
+        run: osv-scanner scan source --lockfile "$FIXTURES/package-lock.json" --format json > "$RUNNER_TEMP/osv.json"
+      - name: Exigir que os três scanners tenham reprovado pelo motivo esperado
+        env:
+          SEMGREP_OUTCOME: ${{ steps.semgrep.outcome }}
+          GITLEAKS_OUTCOME: ${{ steps.gitleaks.outcome }}
+          OSV_OUTCOME: ${{ steps.osv.outcome }}
+        run: |
+          erros=0
+          verificar() {
+            # $1 nome, $2 resultado do passo, $3 arquivo de relatório, $4 filtro jq que deve ser verdadeiro
+            if [ "$2" != "failure" ]; then
+              echo "::error::$1 deveria reprovar os fixtures, mas terminou com resultado '$2'."
+              erros=1
+            elif ! jq -e "$4" "$3" > /dev/null; then
+              echo "::error::$1 reprovou, mas o relatório $3 não contém o achado esperado."
+              erros=1
+            else
+              echo "$1 reprovou pelo motivo esperado."
+            fi
+          }
+          verificar Semgrep "$SEMGREP_OUTCOME" "$RUNNER_TEMP/semgrep.json" \
+            'any(.results[]; .check_id | endswith("csharp-sqli"))'
+          verificar Gitleaks "$GITLEAKS_OUTCOME" "$RUNNER_TEMP/gitleaks.json" \
+            'any(.[]; .RuleID == "generic-api-key" and (.File | endswith("config.env")))'
+          verificar OSV-Scanner "$OSV_OUTCOME" "$RUNNER_TEMP/osv.json" \
+            'any(.results[].packages[]; .package.name == "lodash")'
+          exit "$erros"

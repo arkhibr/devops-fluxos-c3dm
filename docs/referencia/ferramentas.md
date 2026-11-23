@@ -18,9 +18,11 @@ A tabela relaciona cada ferramenta à sua função e ao cenário em que aparece.
 | `actionlint` | Verificador de erros em arquivos de *workflow* do GitHub Actions. | [05](../cenarios/05.md) |
 | `yamllint` | Verificador de sintaxe e estilo de arquivos YAML. | [05](../cenarios/05.md) |
 | `pytest` | Estrutura de testes em Python usada para verificar convenções dos *workflows*. | [05](../cenarios/05.md) |
-| CodeQL | Análise estática de segurança que busca vulnerabilidades no código-fonte. | 06 |
-| *Dependency review* | Verificação de vulnerabilidades introduzidas por mudanças nas dependências de um *pull request*. | 06 |
-| Gitleaks | Varredura de segredos, como senhas e chaves, em arquivos e no histórico do repositório. | 06 |
+| CodeQL | Análise estática de segurança que busca vulnerabilidades no código-fonte. | [06](../cenarios/06.md) |
+| *Dependency review* | Verificação de vulnerabilidades introduzidas por mudanças nas dependências de um *pull request*. | [06](../cenarios/06.md) |
+| Gitleaks | Varredura de segredos, como senhas e chaves, em arquivos e no histórico do repositório. | [06](../cenarios/06.md) |
+| Semgrep | Análise estática por regras, usada para comprovar que o código com injeção de SQL é reprovado. | [06](../cenarios/06.md) |
+| OSV-Scanner | Consulta de dependências de um *lockfile* em bases públicas de vulnerabilidades. | [06](../cenarios/06.md) |
 | OWASP ZAP | Ferramenta de análise dinâmica de segurança que testa a aplicação em execução. | 07 |
 | Docker e GHCR | Empacotamento em imagem de contêiner e registro de imagens do GitHub. | 08 |
 | Ambientes do GitHub | Agrupamento de variáveis, segredos e regras por etapa de implantação. | 09 |
