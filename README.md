@@ -38,7 +38,7 @@ A tabela relaciona os quatorze cenários ao nível do C3DM, o modelo de maturida
 
 ## Biblioteca de *workflows* reutilizáveis
 
-O cenário 12 publica *workflows* reutilizáveis, que outros repositórios chamam com a palavra-chave `uses:` em vez de copiar o código. A *tag* móvel `v1` aponta para a última versão compatível da primeira versão maior. O chamador mínimo da biblioteca de compilação e teste da API .NET é o seguinte.
+O cenário 12 publica *workflows* reutilizáveis, que outros repositórios chamam com a palavra-chave `uses:`, o que dispensa copiar o código. A *tag* móvel `v1` aponta para a última versão compatível da primeira versão maior. O chamador mínimo da biblioteca de compilação e teste da API .NET é o seguinte.
 
 ```yaml
 permissions:
@@ -63,7 +63,7 @@ O GitHub limita as permissões de um *workflow* chamado às que o chamador conce
 
 ## Limitação conhecida do *workflow* de release
 
-O *workflow* `01 Release` não consegue abrir *pull requests* de *release* enquanto a organização bloquear que o GitHub Actions crie *pull requests*. Nesse caso o `release-please` falha, o *workflow* registra um aviso em vez de reprovar a execução e as versões são publicadas manualmente. O cenário 01 descreve a variável `PR_PELO_ACTIONS_BLOQUEADO` e o procedimento.
+O *workflow* `01 Release` não consegue abrir *pull requests* de *release* enquanto a organização bloquear que o GitHub Actions crie *pull requests*. Nesse caso o `release-please` falha, o *workflow* registra um aviso sem reprovar a execução e as versões são publicadas manualmente. O cenário 01 descreve a variável `PR_PELO_ACTIONS_BLOQUEADO` e o procedimento.
 
 ## Licença
 
