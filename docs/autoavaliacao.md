@@ -1,10 +1,49 @@
 # Autoavaliação de maturidade por domínio
 
-Esta página permite que uma equipe situe um sistema em cada um dos cinco domínios do modelo C3DM, descrito na página [Trilha de adoção](trilha.md). Para cada domínio, uma tabela apresenta os cinco níveis com uma evidência observável. Evidência observável é algo que a equipe consegue verificar sem depender de opinião. Pode ser um arquivo do repositório, o histórico da esteira ou um registro de implantação. A esteira é a sequência automatizada de compilação, teste e implantação. Como cada nível pressupõe as evidências dos anteriores, o nível de um domínio é o mais alto cujas evidências estão todas presentes.
+Esta página permite que uma equipe situe um sistema em cada um dos cinco domínios do modelo C3DM, descrito na página [Modelo de maturidade C3DM](modelo-c3dm.md), que traz a matriz completa de níveis e domínios. Para cada domínio, uma tabela apresenta os cinco níveis com uma evidência observável. Evidência observável é algo que a equipe consegue verificar sem depender de opinião. Pode ser um arquivo do repositório, o histórico da esteira ou um registro de implantação. A esteira é a sequência automatizada de compilação, teste e implantação. Como cada nível pressupõe as evidências dos anteriores, o nível de um domínio é o mais alto cujas evidências estão todas presentes.
 
 ## Como aplicar
 
 A avaliação funciona melhor com duas ou três pessoas que conheçam o sistema, o repositório e a operação em produção. Cada pessoa percorre as tabelas e registra o nível de cada domínio. Quando as respostas divergem, vale a evidência que puder ser mostrada na tela, como o histórico de execuções da esteira ou a lista de implantações. O resultado é uma linha com cinco níveis, uma por domínio, que serve de ponto de partida e de comparação após a adoção de novas práticas.
+
+O diagrama resume o percurso de uma avaliação e o que cada passo produz.
+
+```mermaid
+flowchart TB
+    subgraph PRE["Preparação"]
+        P1["Reunir duas ou<br/>três pessoas"]
+        P2["Escolher um<br/>domínio"]
+    end
+    subgraph AVL["Avaliação do domínio"]
+        A1["Ler as evidências<br/>do nível mais baixo"]
+        A2{"Evidência<br/>mostrada na tela?"}
+        A3["Subir para o<br/>nível seguinte"]
+        A4["Registrar o<br/>nível atual"]
+    end
+    subgraph RES["Resultado"]
+        R1[("Perfil com cinco<br/>níveis, um por domínio")]
+        R2["Definir nível-alvo<br/>e cenários de estudo"]
+    end
+    P1 --> P2
+    P2 --> A1
+    A1 --> A2
+    A2 -->|"sim"| A3
+    A3 --> A1
+    A2 -->|"não"| A4
+    A4 -->|"próximo domínio"| P2
+    A4 -->|"cinco domínios feitos"| R1
+    R1 --> R2
+
+    classDef gatilho fill:#E8F1FB,stroke:#1F5FA8,color:#0B2545
+    classDef etapa fill:#FFFFFF,stroke:#5B6B7F,color:#1B2733
+    classDef verificacao fill:#FFF6E0,stroke:#B7791F,color:#5A3A00
+    classDef sucesso fill:#E6F4EA,stroke:#2E7D32,color:#123B17
+    classDef artefato fill:#F3E8FD,stroke:#6A3FB5,color:#2D1457
+    class P1,P2 gatilho
+    class A1,A3,A4,R2 etapa
+    class A2 verificacao
+    class R1 artefato
+```
 
 ## Inteligência contínua
 
@@ -58,7 +97,7 @@ A avaliação funciona melhor com duas ou três pessoas que conheçam o sistema,
 
 ## Cenários do repositório por nível e domínio
 
-O repositório atribui um único nível a cada cenário. Esse agrupamento é uma escolha do roteiro, explicada na página [Trilha de adoção](trilha.md). A tabela coloca cada cenário uma só vez, na coluna do nível do repositório e na linha do domínio que ele exercita. Onde a célula informa que não há cenário, o repositório não traz uma prática dedicada. Nesse caso a equipe deve recorrer às referências da página [Bibliografia](referencia/bibliografia.md). A linha Transversal reúne os cenários que não exercitam um domínio específico do modelo, por tratarem do reaproveitamento da esteira, das métricas da esteira e da adoção em um sistema existente. Para subir um nível em um domínio, a equipe consulta a coluna do nível desejado e estuda os cenários indicados nessa linha e na linha Transversal.
+O repositório atribui um único nível a cada cenário. Esse agrupamento é uma escolha do roteiro, explicada na página [Trilha de adoção](trilha.md), que relaciona os cenários ao modelo. A tabela coloca cada cenário uma só vez, na coluna do nível do repositório e na linha do domínio que ele exercita. Onde a célula informa que não há cenário, o repositório não traz uma prática dedicada. Nesse caso a equipe deve recorrer às referências da página [Bibliografia](referencia/bibliografia.md). A linha Transversal reúne os cenários que não exercitam um domínio específico do modelo, por tratarem do reaproveitamento da esteira, das métricas da esteira e da adoção em um sistema existente. Para subir um nível em um domínio, a equipe consulta a coluna do nível desejado e estuda os cenários indicados nessa linha e na linha Transversal.
 
 | Domínio | Fundacional | Novato | Intermediário | Avançado | Especialista |
 | --- | --- | --- | --- | --- | --- |

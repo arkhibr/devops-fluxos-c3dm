@@ -29,6 +29,7 @@ markdown_extensions:
 
 nav:
   - Início: index.md
+  - Modelo C3DM: modelo-c3dm.md
   - Trilha de adoção: trilha.md
   - Autoavaliação: autoavaliacao.md
   - Cenários:
