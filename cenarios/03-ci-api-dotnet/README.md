@@ -23,7 +23,7 @@ O job se chama `ci-api` porque o nome `build` já pertence à verificação obri
 
 O passo de testes usa o coletor `XPlat Code Coverage`, fornecido pelo pacote `coverlet.collector`, que gera o arquivo `coverage.cobertura.xml` na pasta `TestResults` do projeto de testes em um formato XML aceito por muitas ferramentas de relatório. O parâmetro `Include="[Api]*"` restringe a medição ao assembly `Api`, de modo que o código dos testes fica fora do cálculo do percentual.
 
-O passo seguinte usa a *action* `irongut/CodeCoverageSummary`, que lê o XML por um padrão de caminho e produz uma tabela em Markdown. O parâmetro `thresholds: '80 90'` define dois limites. O primeiro limite, de 80%, é o mínimo exigido da cobertura de linhas. Com `fail_below_min: true` o passo falha abaixo desse valor. O segundo limite, de 90%, apenas altera o indicador de saúde que a tabela exibe ao lado do percentual de cada pacote.
+O passo seguinte usa a *action* `irongut/CodeCoverageSummary`, que lê o XML por um padrão de caminho com curinga e produz uma tabela em formato Markdown. O parâmetro `thresholds: '80 90'` define dois limites. O primeiro limite, de 80%, é o mínimo exigido da cobertura de linhas. Com `fail_below_min: true` o passo falha abaixo desse valor. O segundo limite, de 90%, apenas altera o indicador de saúde que a tabela exibe ao lado do percentual de cada pacote.
 
 O valor `60 80` aparece em exemplos da documentação da *action*. Nele o limite que reprova seria 60%, valor que não corresponde ao piso de 80% adotado aqui.
 
