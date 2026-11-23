@@ -6,7 +6,10 @@ on:
   workflow_call:
     inputs:
       diretorio:
-        description: Pasta da aplicação, a partir da raiz do repositório chamador, que contém o package.json com os scripts lint, typecheck, test e build. Os limites de cobertura vêm da configuração do vitest do chamador.
+        description: >-
+          Pasta da aplicação, a partir da raiz do repositório chamador, que contém o package.json
+          com os scripts lint, typecheck, test e build. Os limites de cobertura vêm da configuração
+          do vitest do chamador.
         type: string
         required: true
       node-version:
