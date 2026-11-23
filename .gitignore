@@ -1,0 +1,10 @@
+.superpowers/
+bin/
+obj/
+node_modules/
+dist/
+coverage/
+site/
+.venv/
+__pycache__/
+TestResults/
