@@ -26,7 +26,7 @@ A tabela relaciona cada ferramenta à sua função e ao cenário em que aparece.
 | OWASP ZAP | Ferramenta de análise dinâmica de segurança que testa a aplicação em execução. | [07](../cenarios/07.md) |
 | Docker e GHCR | Empacotamento em imagem de contêiner e registro de imagens do GitHub. | [08](../cenarios/08.md) |
 | Ambientes do GitHub | Agrupamento de variáveis, segredos e regras por etapa de implantação. | [09](../cenarios/09.md) |
-| Docker Compose e NGINX | Execução de duas versões da aplicação e roteamento do tráfego entre elas. | 10 e 11 |
+| Docker Compose e NGINX | Execução de duas versões da aplicação e roteamento do tráfego entre elas. | [10](../cenarios/10.md) e 11 |
 | *Composite actions* | Ações próprias que agrupam vários passos reutilizáveis. | 12 |
 | API REST do GitHub | Fonte de dados de implantações e de *issues* para o cálculo das métricas. | 13 |
 | MkDocs com tema Material | Geração do portal de documentação. | Portal |
