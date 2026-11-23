@@ -1,0 +1,37 @@
+"""Testes do cenário 01: títulos convencionais, release-please e tag móvel de versão maior."""
+import json
+
+from workflows import RAIZ, carregar_workflow, passos
+
+TIPOS = {"feat", "fix", "docs", "chore", "ci", "test", "refactor"}
+
+
+def test_titulo_pr_valida_tipos():
+    wf = carregar_workflow("01-titulo-pr.yml")
+    passo = next(p for p in passos(wf, "titulo") if "amannn/action-semantic-pull-request" in p.get("uses", ""))
+    assert set(passo["with"]["types"].split()) == TIPOS
+    assert wf["permissions"] == {"pull-requests": "read"}
+
+
+def test_release_please_pacote_unico():
+    config = json.loads((RAIZ / "release-please-config.json").read_text(encoding="utf-8"))
+    assert list(config["packages"]) == ["."]
+    assert config["packages"]["."]["release-type"] == "simple"
+    assert config["include-v-in-tag"] is True
+    manifesto = json.loads((RAIZ / ".release-please-manifest.json").read_text(encoding="utf-8"))
+    assert manifesto == {".": "0.0.0"}
+
+
+def test_release_roda_somente_em_push_na_main():
+    wf = carregar_workflow("01-release.yml")
+    assert set(wf["on"]) == {"push"}
+    assert wf["on"]["push"]["branches"] == ["main"]
+
+
+def test_tag_principal_dispara_em_release():
+    wf = carregar_workflow("01-tag-principal.yml")
+    assert wf["on"]["release"]["types"] == ["published"]
+    assert wf["permissions"] == {"contents": "write"}
+    comandos = "\n".join(p.get("run", "") for p in passos(wf, "tag-principal"))
+    assert "GITHUB_REF_NAME%%.*" in comandos
+    assert comandos.index('git tag -f "$principal"') < comandos.index('git push -f origin "$principal"')

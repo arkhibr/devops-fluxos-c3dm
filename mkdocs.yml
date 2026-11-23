@@ -33,6 +33,7 @@ nav:
   - Autoavaliação: autoavaliacao.md
   - Cenários:
       - cenarios/index.md
+      - 01 Versionamento semântico: cenarios/01.md
   - Referência:
       - Glossário: referencia/glossario.md
       - Métricas: referencia/metricas.md

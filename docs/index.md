@@ -36,7 +36,7 @@ A tabela relaciona os quatorze cenários ao nível do C3DM em que cada um se enq
 
 | Nº | Cenário | Nível |
 | --- | --- | --- |
-| 01 | Mensagens de *commit* convencionais e versionamento semântico automático | Fundacional |
+| [01](cenarios/01.md) | Mensagens de *commit* convencionais e versionamento semântico automático | Fundacional |
 | 02 | Estratégia de *branches* e *rulesets* de proteção versionados | Fundacional |
 | 03 | Compilação e teste da API .NET com cobertura | Novato |
 | 04 | Compilação e teste da aplicação React com *lint* e cobertura | Novato |

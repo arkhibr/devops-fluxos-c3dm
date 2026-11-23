@@ -1,0 +1,34 @@
+---
+name: 01 Release
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+
+concurrency:
+  group: release-please
+  cancel-in-progress: false
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Calcular a versão e manter o pull request de release
+        id: release
+        uses: googleapis/release-please-action@5c625bfb5d1ff62eadeeb3772007f7f66fdcf071  # v4.4.1
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+      # Releases criadas com o GITHUB_TOKEN não disparam o evento release.published
+      # em outros workflows. Por isso a atualização da tag móvel é acionada aqui.
+      - name: Acionar a atualização da tag de versão maior
+        if: steps.release.outputs.release_created == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.release.outputs.tag_name }}
+        run: gh workflow run 01-tag-principal.yml --repo "$GITHUB_REPOSITORY" --ref "$TAG"

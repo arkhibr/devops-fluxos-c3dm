@@ -1,0 +1,24 @@
+---
+name: 01 Tag principal
+
+# Mantém a tag móvel da versão maior (por exemplo v1) apontando para a última release.
+# O gatilho workflow_dispatch existe porque releases criadas pelo GITHUB_TOKEN não
+# disparam o evento release. O 01-release.yml o aciona usando a tag como referência.
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  tag-principal:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+      - name: Mover a tag da versão maior para esta release
+        run: |
+          principal="${GITHUB_REF_NAME%%.*}"
+          git tag -f "$principal"
+          git push -f origin "$principal"
